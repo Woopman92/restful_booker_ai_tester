@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "restful-booker-api-tests"
+version = "0.1.0"
+description = "Contract and functional tests for Restful Booker"
+authors = []
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "2.32.3"
+pytest = "8.3.5"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "7.3.0"
+isort = "6.0.1"
+yapf = "0.43.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+xfail_strict = true
+markers = [
+    "positive: positive API scenarios requiring the service and temporary bookings",
+    "negative: negative API scenarios requiring the service and temporary bookings",
+]
