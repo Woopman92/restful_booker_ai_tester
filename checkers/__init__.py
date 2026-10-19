@@ -2,4 +2,4 @@
 
 import pytest
 
-pytest.register_assert_rewrite('checkers.common', 'checkers.bookings')
+pytest.register_assert_rewrite('checkers.common', 'checkers.bookings', 'checkers.auth')

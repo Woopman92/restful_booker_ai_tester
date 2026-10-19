@@ -59,3 +59,19 @@ def check_booking_presence(response: Response, booking_id: int, expected_present
     """
     actual_ids = booking_ids(response)
     assert (booking_id in actual_ids) == expected_present
+
+
+def check_updated_booking(response: Response, expected_payload: dict[str, object]) -> None:
+    """Check the complete payload returned after an authenticated update.
+
+    Args:
+        response: Booking update response.
+        expected_payload: Complete replacement payload expected in the response.
+
+    Raises:
+        AssertionError: The status, media type or booking payload differs.
+        ValueError: The body is not valid JSON.
+    """
+    assert response.status_code == 200, 'Authenticated update failed'
+    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
+    assert response.json() == expected_payload

@@ -3,4 +3,4 @@ __pycache__/
 .pytest_cache/
 .idea/
 .env
-HISTORY.md
+.DS_Store

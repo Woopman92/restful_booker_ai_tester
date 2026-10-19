@@ -6,8 +6,10 @@ from typing import Any
 import requests
 
 from constants import CREATE_BOOKING_PATH
+from constants import CREATE_TOKEN_PATH
 from constants import DELETE_BOOKING_PATH
 from constants import GET_BOOKINGS_PATH
+from constants import UPDATE_BOOKING_PATH
 
 
 @dataclass
@@ -17,6 +19,58 @@ class ApiClient:
     session: requests.Session
     base_url: str
     timeout: float
+
+    def create_token(
+        self,
+        payload: dict[str, Any] | None = None,
+        body: str | None = None,
+        content_type: str = 'application/json'
+    ) -> requests.Response:
+        """Request an authentication token without persisting credentials in the session.
+
+        Args:
+            payload: JSON credentials, omitted when sending a raw body.
+            body: Raw body for malformed or empty payload scenarios.
+            content_type: Media type of the request body.
+
+        Returns:
+            requests.Response: Authentication response from the service.
+
+        Raises:
+            requests.RequestException: The request fails, including timeouts.
+            ValueError: Both a JSON payload and a raw body are provided.
+        """
+        if payload is not None and body is not None:
+            raise ValueError('Provide either a JSON payload or a raw body')
+        return self.session.post(
+            f'{self.base_url}{CREATE_TOKEN_PATH}',
+            json=payload,
+            data=body,
+            headers={'Content-Type': content_type},
+            timeout=self.timeout,
+        )
+
+    def update_booking(self, booking_id: int, payload: dict[str, Any], token: str) -> requests.Response:
+        """Update a test-owned booking using only token authentication.
+
+        Args:
+            booking_id: ID of the test-owned booking to update.
+            payload: Complete replacement booking payload.
+            token: Token sent in the Cookie header for this request only.
+
+        Returns:
+            requests.Response: Booking update response from the service.
+
+        Raises:
+            requests.RequestException: The request fails, including timeouts.
+        """
+        path = UPDATE_BOOKING_PATH.format(booking_id=booking_id)
+        return self.session.put(
+            f'{self.base_url}{path}',
+            json=payload,
+            headers={'Cookie': f'token={token}'},
+            timeout=self.timeout,
+        )
 
     def get_bookings(self, params: dict[str, str] | list[tuple[str, str]] | None = None) -> requests.Response:
         """Retrieve booking IDs using optional query parameters.

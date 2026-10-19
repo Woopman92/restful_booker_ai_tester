@@ -1,0 +1,1 @@
+"""CreateToken endpoint tests."""
