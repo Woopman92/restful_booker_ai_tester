@@ -3,8 +3,8 @@
 import pytest
 
 from checkers.auth import check_created_token
-from constants import PASSWORD
-from constants import USERNAME
+from constants import BOOKER_PASSWORD
+from constants import BOOKER_USERNAME
 from tests.support import ApiClient
 
 
@@ -15,7 +15,7 @@ def credentials() -> dict[str, str]:
     Returns:
         dict[str, str]: Fresh username and password mapping for this test.
     """
-    return {'username': USERNAME, 'password': PASSWORD}
+    return {'username': BOOKER_USERNAME, 'password': BOOKER_PASSWORD}
 
 
 @pytest.fixture

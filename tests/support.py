@@ -2,12 +2,14 @@
 
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
 from constants import CREATE_BOOKING_PATH
 from constants import CREATE_TOKEN_PATH
 from constants import DELETE_BOOKING_PATH
+from constants import GET_BOOKING_PATH
 from constants import GET_BOOKINGS_PATH
 from constants import UPDATE_BOOKING_PATH
 
@@ -86,6 +88,22 @@ class ApiClient:
             requests.RequestException: The request fails, including timeouts.
         """
         return self.session.get(f'{self.base_url}{GET_BOOKINGS_PATH}', params=params, timeout=self.timeout)
+
+    def get_booking(self, booking_id: int | str, accept: str | None = 'application/json') -> requests.Response:
+        """Read one booking without changing shared session headers.
+
+        Args:
+            booking_id: ID encoded as a single URL path segment.
+            accept: Desired response media type. None removes the session Accept header.
+
+        Returns:
+            requests.Response: Response to the booking retrieval request.
+
+        Raises:
+            requests.RequestException: The request fails, including timeouts.
+        """
+        path = GET_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
+        return self.session.get(f'{self.base_url}{path}', headers={'Accept': accept}, timeout=self.timeout)
 
     def create_booking(self, payload: dict[str, Any]) -> requests.Response:
         """Create a booking for test data setup.

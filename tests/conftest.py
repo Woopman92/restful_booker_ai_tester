@@ -9,6 +9,8 @@ import pytest
 import requests
 
 from constants import BASE_URL
+from constants import BOOKER_PASSWORD
+from constants import BOOKER_USERNAME
 from tests.support import ApiClient
 from tests.support import Booking
 
@@ -85,7 +87,7 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
         try:
             response = api.delete_booking(
                 booking_id,
-                auth=(os.getenv('BOOKER_USERNAME', 'admin'), os.getenv('BOOKER_PASSWORD', 'password123')),
+                auth=(BOOKER_USERNAME, BOOKER_PASSWORD),
             )
             if response.status_code != 201:
                 errors.append(f'ID {booking_id}: HTTP {response.status_code}')
