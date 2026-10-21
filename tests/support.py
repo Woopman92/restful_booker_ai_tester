@@ -105,19 +105,37 @@ class ApiClient:
         path = GET_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
         return self.session.get(f'{self.base_url}{path}', headers={'Accept': accept}, timeout=self.timeout)
 
-    def create_booking(self, payload: dict[str, Any]) -> requests.Response:
-        """Create a booking for test data setup.
+    def create_booking(
+        self,
+        payload: dict[str, Any] | None = None,
+        body: str | dict[str, Any] | None = None,
+        content_type: str | None = 'application/json',
+        accept: str | None = 'application/json'
+    ) -> requests.Response:
+        """Create a booking using JSON, a raw body or encoded form fields.
 
         Args:
-            payload: Booking data sent as a JSON request body.
+            payload: Booking fields sent as JSON.
+            body: Raw JSON/XML text or a mapping sent as form data.
+            content_type: Request media type; None omits the header.
+            accept: Desired response media type; None omits the header.
 
         Returns:
             requests.Response: Booking creation response returned by the service.
 
         Raises:
             requests.RequestException: The request fails, including timeouts.
+            ValueError: Both payload and body are supplied.
         """
-        return self.session.post(f'{self.base_url}{CREATE_BOOKING_PATH}', json=payload, timeout=self.timeout)
+        if payload is not None and body is not None:
+            raise ValueError('Provide either a JSON payload or a raw/form body')
+        return self.session.post(
+            f'{self.base_url}{CREATE_BOOKING_PATH}',
+            json=payload,
+            data=body,
+            headers={'Content-Type': content_type, 'Accept': accept},
+            timeout=self.timeout,
+        )
 
     def delete_booking(self, booking_id: int, auth: tuple[str, str]) -> requests.Response:
         """Delete a test-owned booking during cleanup.

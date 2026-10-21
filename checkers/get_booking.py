@@ -21,6 +21,20 @@ def check_json_booking(response: Response, expected_payload: dict[str, Any]) -> 
     assert response.status_code == 200, response.text
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     body = response.json()
+    check_booking_schema(body)
+    assert body == expected_payload
+
+
+def check_booking_schema(body: Any) -> None:
+    """Validate required fields, JSON types and calendar dates of a booking object.
+
+    Args:
+        body: Decoded booking object to validate.
+
+    Raises:
+        AssertionError: Required fields, types or date representations are invalid.
+        ValueError: A calendar date cannot be parsed.
+    """
     assert isinstance(body, dict)
     for field in ('firstname', 'lastname', 'additionalneeds'):
         assert isinstance(body.get(field), str), f'Expected string field {field}'
@@ -31,7 +45,6 @@ def check_json_booking(response: Response, expected_payload: dict[str, Any]) -> 
         value = body['bookingdates'].get(field)
         assert isinstance(value, str)
         assert date.fromisoformat(value).isoformat() == value
-    assert body == expected_payload
 
 
 def _booking_text_fields(payload: dict[str, Any]) -> dict[str, str]:
@@ -69,6 +82,19 @@ def check_xml_booking(response: Response, expected_payload: dict[str, Any]) -> N
     # The response Content-Type is not explicitly specified; record the observed text/html value.
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/html'
     root = ElementTree.fromstring(response.text)
+    check_xml_booking_data(root, expected_payload)
+
+
+def check_xml_booking_data(root: ElementTree.Element, expected_payload: dict[str, Any]) -> None:
+    """Validate a booking XML element and compare required text fields.
+
+    Args:
+        root: Parsed booking element.
+        expected_payload: Complete booking fields expected in the XML.
+
+    Raises:
+        AssertionError: Required elements or their text values differ.
+    """
     assert root.tag == 'booking'
     assert len(root.findall('bookingdates')) == 1
     for path, expected_text in _booking_text_fields(expected_payload).items():
