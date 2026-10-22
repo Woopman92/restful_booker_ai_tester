@@ -7,7 +7,7 @@ import pytest
 
 from checkers.auth import check_bad_credentials
 from checkers.common import check_plain_text_error
-from tests.support import ApiClient
+from tests.client import ApiClient
 
 pytestmark = pytest.mark.negative
 

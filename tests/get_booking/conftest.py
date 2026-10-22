@@ -7,7 +7,7 @@ import pytest
 
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
-from tests.support import ApiClient
+from tests.client import ApiClient
 
 
 @pytest.fixture

@@ -5,8 +5,8 @@ import pytest
 from checkers.auth import check_created_token
 from checkers.bookings import check_booking_ids
 from checkers.bookings import check_updated_booking
-from tests.support import ApiClient
-from tests.support import Booking
+from helpers.models import Booking
+from tests.client import ApiClient
 
 pytestmark = pytest.mark.positive
 
@@ -39,19 +39,19 @@ class TestTokenReissuance:
     """Record current token uniqueness and validity after a second issuance."""
 
     def test_current_behavior_after_token_reissuance(
-        self, api: ApiClient, credentials: dict[str, str], first_token: str, booking: Booking
+        self, api: ApiClient, credentials: dict[str, str], token: str, booking: Booking
     ) -> None:
         """Issue a distinct second token and verify that both tokens still authorize updates."""
         # The expected uniqueness and revocation behavior is unspecified in the documentation.
         # This test records current behavior: tokens differ and both remain usable after reissuance.
         response = api.create_token(payload=credentials)
         second_token = check_created_token(response)
-        tokens_differ = first_token != second_token
+        tokens_differ = token != second_token
         assert tokens_differ, 'Repeated issuance returned the same token'
 
-        for label, token in [('Second', second_token), ('FirstAfterReissuance', first_token)]:
+        for label, issued_token in [('Second', second_token), ('FirstAfterReissuance', token)]:
             updated_payload = {**booking.payload, 'firstname': booking.payload['firstname'] + label}
-            response = api.update_booking(booking.booking_id, updated_payload, token)
+            response = api.update_booking(booking.booking_id, updated_payload, issued_token)
             check_updated_booking(response, updated_payload)
             params = {'firstname': updated_payload['firstname'], 'lastname': updated_payload['lastname']}
             response = api.get_bookings(params=params)

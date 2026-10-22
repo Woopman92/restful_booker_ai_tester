@@ -8,8 +8,8 @@ import pytest
 
 from checkers.bookings import check_booking_ids
 from checkers.bookings import check_booking_presence
-from tests.support import ApiClient
-from tests.support import Booking
+from helpers.models import Booking
+from tests.client import ApiClient
 
 pytestmark = pytest.mark.positive
 

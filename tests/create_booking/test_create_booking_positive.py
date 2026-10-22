@@ -10,10 +10,10 @@ from checkers.create_booking import check_created_values
 from checkers.create_booking import check_creation_schema
 from checkers.create_booking import check_form_created_booking
 from checkers.create_booking import check_xml_created_booking
+from helpers.payloads import form_payload
+from helpers.payloads import xml_payload
+from tests.client import ApiClient
 from tests.create_booking.support import CreationTracker
-from tests.create_booking.support import form_payload
-from tests.create_booking.support import xml_payload
-from tests.support import ApiClient
 
 pytestmark = pytest.mark.positive
 

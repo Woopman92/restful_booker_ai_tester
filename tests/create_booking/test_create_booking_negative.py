@@ -7,8 +7,8 @@ import pytest
 
 from checkers.common import check_plain_text_error
 from checkers.create_booking import check_current_created_booking
+from tests.client import ApiClient
 from tests.create_booking.support import CreationTracker
-from tests.support import ApiClient
 
 pytestmark = pytest.mark.negative
 

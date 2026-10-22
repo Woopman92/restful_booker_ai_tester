@@ -1,0 +1,1 @@
+"""Full booking replacement tests."""

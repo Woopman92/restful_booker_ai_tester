@@ -19,3 +19,16 @@ def check_plain_text_error(response: Response, expected_status_code: int) -> Non
     assert response.status_code == expected_status_code, response.text
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/plain'
     assert response.text == HTTPStatus(expected_status_code).phrase
+
+
+def check_status_code(response: Response, expected_status_code: int) -> None:
+    """Check an HTTP status independently of representation-specific assertions.
+
+    Args:
+        response: Service response to validate.
+        expected_status_code: Required HTTP response status.
+
+    Raises:
+        AssertionError: The status differs from the expected value.
+    """
+    assert response.status_code == expected_status_code

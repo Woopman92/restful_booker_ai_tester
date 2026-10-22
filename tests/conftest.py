@@ -8,11 +8,12 @@ from uuid import uuid4
 import pytest
 import requests
 
+from checkers.auth import check_created_token
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
-from tests.support import ApiClient
-from tests.support import Booking
+from helpers.models import Booking
+from tests.client import ApiClient
 
 
 @pytest.fixture(scope='session')
@@ -33,6 +34,25 @@ def api() -> Iterator[ApiClient]:
 
 
 @pytest.fixture
+def token(api: ApiClient) -> str:
+    """Issue a fresh authentication token for the current test.
+
+    Args:
+        api: Client used to request the token.
+
+    Returns:
+        str: Token extracted from a validated response.
+
+    Raises:
+        AssertionError: Authentication response status or schema is invalid.
+        ValueError: The response is not valid JSON.
+        requests.RequestException: Authentication fails at transport level.
+    """
+    response = api.create_token(payload={'username': BOOKER_USERNAME, 'password': BOOKER_PASSWORD})
+    return check_created_token(response)
+
+
+@pytest.fixture
 def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
     """Create unique bookings and attempt deletion of every owned ID at teardown.
 
@@ -40,7 +60,7 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
         api: Client used to create and delete test-owned bookings.
 
     Yields:
-        Callable[..., Booking]: Factory accepting optional firstname and lastname
+        Callable[..., Booking]: Factory accepting optional firstname, lastname and depositpaid
         overrides. Every registered booking is deleted at teardown.
 
     Raises:
@@ -48,10 +68,11 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
     """
     owned_ids: list[int] = []
 
-    def create(**overrides: str) -> Booking:
+    def create(*, depositpaid: bool = True, **overrides: str) -> Booking:
         """Create one booking, registering its ID before validating its payload.
 
         Args:
+            depositpaid: Initial deposit flag. Defaults to True.
             **overrides: Optional firstname and lastname values. Omitted names
                 are generated using a UUID.
 
@@ -68,7 +89,7 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
             'firstname': overrides.get('firstname', f'QA{unique}'),
             'lastname': overrides.get('lastname', f'Test{unique}'),
             'totalprice': 123,
-            'depositpaid': True,
+            'depositpaid': depositpaid,
             'bookingdates': {'checkin': '2030-06-15', 'checkout': '2030-06-20'},
             'additionalneeds': 'API test',
         }
@@ -97,11 +118,13 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
 
 
 @pytest.fixture
-def booking(create_booking: Callable[..., Booking]) -> Booking:
+def booking(create_booking: Callable[..., Booking], request: pytest.FixtureRequest) -> Booking:
     """Create an isolated booking for the current test.
 
     Args:
         create_booking: Factory that creates and registers bookings for cleanup.
+        request: Optional indirect parameter mapping, such as depositpaid=False.
+            Without parametrization the factory defaults are used.
 
     Returns:
         Booking: Newly created booking with unique guest names.
@@ -110,4 +133,4 @@ def booking(create_booking: Callable[..., Booking]) -> Booking:
         AssertionError: The factory receives an unexpected creation response.
         requests.RequestException: The creation request fails.
     """
-    return create_booking()
+    return create_booking(**getattr(request, 'param', {}))

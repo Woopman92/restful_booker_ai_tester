@@ -3,8 +3,8 @@
 import pytest
 
 from checkers.common import check_plain_text_error
-from tests.support import ApiClient
-from tests.support import Booking
+from helpers.models import Booking
+from tests.client import ApiClient
 
 pytestmark = pytest.mark.negative
 

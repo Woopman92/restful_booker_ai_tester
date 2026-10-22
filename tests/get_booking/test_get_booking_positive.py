@@ -4,8 +4,8 @@ import pytest
 
 from checkers.get_booking import check_json_booking
 from checkers.get_booking import check_xml_booking
-from tests.support import ApiClient
-from tests.support import Booking
+from helpers.models import Booking
+from tests.client import ApiClient
 
 pytestmark = pytest.mark.positive
 

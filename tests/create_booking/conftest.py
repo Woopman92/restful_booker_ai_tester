@@ -6,8 +6,8 @@ from uuid import uuid4
 
 import pytest
 
+from tests.client import ApiClient
 from tests.create_booking.support import CreationTracker
-from tests.support import ApiClient
 
 
 @pytest.fixture

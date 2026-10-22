@@ -1,4 +1,4 @@
-"""Shared API transport and response contract checks."""
+"""Endpoint-specific API client."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -52,25 +52,50 @@ class ApiClient:
             timeout=self.timeout,
         )
 
-    def update_booking(self, booking_id: int, payload: dict[str, Any], token: str) -> requests.Response:
-        """Update a test-owned booking using only token authentication.
+    def update_booking(
+        self,
+        booking_id: int | str,
+        payload: dict[str, Any] | None = None,
+        token: str | None = None,
+        auth: tuple[str, str] | None = None,
+        authorization: str | None = None,
+        body: str | dict[str, Any] | None = None,
+        content_type: str | None = 'application/json',
+        accept: str | None = 'application/json'
+    ) -> requests.Response:
+        """Replace an owned booking using one explicit authentication mechanism.
 
         Args:
-            booking_id: ID of the test-owned booking to update.
-            payload: Complete replacement booking payload.
-            token: Token sent in the Cookie header for this request only.
+            booking_id: ID encoded as one URL path segment.
+            payload: Complete JSON replacement payload.
+            token: Cookie token sent for this request only.
+            auth: Username and password for HTTP Basic authentication.
+            authorization: Raw Authorization header for malformed-header scenarios.
+            body: Raw text or form fields instead of a JSON payload.
+            content_type: Request media type; None omits it for raw bodies.
+            accept: Desired response media type; None removes the session header.
 
         Returns:
-            requests.Response: Booking update response from the service.
+            requests.Response: Booking replacement response.
 
         Raises:
             requests.RequestException: The request fails, including timeouts.
+            ValueError: Body formats or authentication mechanisms conflict.
         """
-        path = UPDATE_BOOKING_PATH.format(booking_id=booking_id)
+        if payload is not None and body is not None:
+            raise ValueError('Provide either a JSON payload or a raw/form body')
+        if sum(value is not None for value in (token, auth, authorization)) > 1:
+            raise ValueError('Provide only one authentication mechanism')
+        path = UPDATE_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
+        headers = {'Content-Type': content_type, 'Accept': accept, 'Authorization': authorization}
+        if token is not None:
+            headers['Cookie'] = f'token={token}'
         return self.session.put(
             f'{self.base_url}{path}',
             json=payload,
-            headers={'Cookie': f'token={token}'},
+            data=body,
+            headers=headers,
+            auth=auth,
             timeout=self.timeout,
         )
 
@@ -152,11 +177,3 @@ class ApiClient:
         """
         path = DELETE_BOOKING_PATH.format(booking_id=booking_id)
         return self.session.delete(f'{self.base_url}{path}', auth=auth, timeout=self.timeout)
-
-
-@dataclass(frozen=True)
-class Booking:
-    """Store the ID and original payload of a test-owned booking."""
-
-    booking_id: int
-    payload: dict[str, Any]

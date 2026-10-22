@@ -9,7 +9,7 @@ from requests import Response
 from checkers.get_booking import check_booking_schema
 from checkers.get_booking import check_json_booking
 from checkers.get_booking import check_xml_booking_data
-from tests.support import ApiClient
+from tests.client import ApiClient
 
 
 def check_creation_schema(response: Response) -> int:
