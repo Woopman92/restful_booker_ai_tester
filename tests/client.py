@@ -11,6 +11,7 @@ from constants import CREATE_TOKEN_PATH
 from constants import DELETE_BOOKING_PATH
 from constants import GET_BOOKING_PATH
 from constants import GET_BOOKINGS_PATH
+from constants import PARTIAL_UPDATE_BOOKING_PATH
 from constants import UPDATE_BOOKING_PATH
 
 
@@ -91,6 +92,53 @@ class ApiClient:
         if token is not None:
             headers['Cookie'] = f'token={token}'
         return self.session.put(
+            f'{self.base_url}{path}',
+            json=payload,
+            data=body,
+            headers=headers,
+            auth=auth,
+            timeout=self.timeout,
+        )
+
+    def partial_update_booking(
+        self,
+        booking_id: int | str,
+        payload: dict[str, Any] | None = None,
+        token: str | None = None,
+        auth: tuple[str, str] | None = None,
+        authorization: str | None = None,
+        body: str | dict[str, Any] | None = None,
+        content_type: str | None = 'application/json',
+        accept: str | None = 'application/json'
+    ) -> requests.Response:
+        """Update supplied booking fields using one explicit authentication mechanism.
+
+        Args:
+            booking_id: ID encoded as one URL path segment.
+            payload: JSON fields to update; omitted fields should be preserved.
+            token: Cookie token sent for this request only.
+            auth: Username and password for HTTP Basic authentication.
+            authorization: Raw Authorization header for malformed-header scenarios.
+            body: Raw text or form fields instead of a JSON payload.
+            content_type: Request media type; None omits it for raw bodies.
+            accept: Desired response media type; None removes the session header.
+
+        Returns:
+            requests.Response: Partial booking update response.
+
+        Raises:
+            requests.RequestException: The request fails, including timeouts.
+            ValueError: Body formats or authentication mechanisms conflict.
+        """
+        if payload is not None and body is not None:
+            raise ValueError('Provide either a JSON payload or a raw/form body')
+        if sum(value is not None for value in (token, auth, authorization)) > 1:
+            raise ValueError('Provide only one authentication mechanism')
+        path = PARTIAL_UPDATE_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
+        headers = {'Content-Type': content_type, 'Accept': accept, 'Authorization': authorization}
+        if token is not None:
+            headers['Cookie'] = f'token={token}'
+        return self.session.patch(
             f'{self.base_url}{path}',
             json=payload,
             data=body,

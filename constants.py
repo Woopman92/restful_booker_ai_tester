@@ -13,6 +13,7 @@ GET_BOOKINGS_PATH = '/booking'
 GET_BOOKING_PATH = '/booking/{booking_id}'
 CREATE_BOOKING_PATH = '/booking'
 UPDATE_BOOKING_PATH = '/booking/{booking_id}'
+PARTIAL_UPDATE_BOOKING_PATH = '/booking/{booking_id}'
 DELETE_BOOKING_PATH = '/booking/{booking_id}'
 
 # Credentials for authentication and test data cleanup.

@@ -8,5 +8,6 @@ pytest.register_assert_rewrite(
     'checkers.auth',
     'checkers.get_booking',
     'checkers.create_booking',
+    'checkers.partial_update_booking',
     'checkers.update_booking'
 )
