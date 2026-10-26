@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 from datetime import date
 from datetime import timedelta
+from time import sleep
 from typing import Any
 from uuid import uuid4
 
@@ -18,6 +19,9 @@ from checkers.delete_booking import check_deleted_booking
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
+from constants import PING_ATTEMPTS
+from constants import PING_PATH
+from constants import PING_RETRY_DELAY
 from helpers.models import Booking
 from tests.client import ApiClient
 
@@ -37,6 +41,35 @@ def api() -> Iterator[ApiClient]:
             BASE_URL,
             float(os.getenv('BOOKER_TIMEOUT', '10')),
         )
+
+
+@pytest.fixture(scope='session', autouse=True)
+def service_available(api: ApiClient) -> None:
+    """Require a successful health check before running tests, allowing bounded retries.
+
+    Args:
+        api: Shared client used for the session health check.
+
+    Raises:
+        pytest.exit.Exception: Every attempt fails; stop the session with a nonzero exit code.
+    """
+    errors: list[str] = []
+    for attempt in range(1, PING_ATTEMPTS + 1):
+        try:
+            response = api.ping()
+        except requests.RequestException as error:
+            errors.append(f'Attempt {attempt}: {type(error).__name__}: {error}')
+        else:
+            if response.status_code == 201:
+                return
+            errors.append(f'Attempt {attempt}: HTTP {response.status_code} {response.reason}')
+        if attempt < PING_ATTEMPTS:
+            sleep(PING_RETRY_DELAY)
+    pytest.exit(
+        f'Service availability check failed: {api.base_url}{PING_PATH} after {PING_ATTEMPTS} attempts.\n' +
+        '\n'.join(errors),
+        returncode=pytest.ExitCode.INTERRUPTED,
+    )
 
 
 @pytest.fixture

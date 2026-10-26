@@ -12,6 +12,8 @@ from constants import DELETE_BOOKING_PATH
 from constants import GET_BOOKING_PATH
 from constants import GET_BOOKINGS_PATH
 from constants import PARTIAL_UPDATE_BOOKING_PATH
+from constants import PING_PATH
+from constants import PING_TIMEOUT
 from constants import UPDATE_BOOKING_PATH
 
 
@@ -22,6 +24,17 @@ class ApiClient:
     session: requests.Session
     base_url: str
     timeout: float
+
+    def ping(self) -> requests.Response:
+        """Check service availability with a dedicated short timeout.
+
+        Returns:
+            requests.Response: Health-check response from the service.
+
+        Raises:
+            requests.RequestException: The health-check request fails, including timeouts.
+        """
+        return self.session.get(f'{self.base_url}{PING_PATH}', timeout=PING_TIMEOUT)
 
     def create_token(
         self,

@@ -5,6 +5,12 @@ import os
 # Base address of the service under test.
 BASE_URL = os.getenv('BOOKER_BASE_URL', 'https://restful-booker.herokuapp.com').rstrip('/')
 
+# Service availability check at the start of each test session.
+PING_PATH = '/ping'
+PING_ATTEMPTS = 3
+PING_TIMEOUT = 5
+PING_RETRY_DELAY = 2
+
 # Authentication endpoint paths.
 CREATE_TOKEN_PATH = '/auth'
 
