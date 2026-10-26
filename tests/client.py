@@ -210,18 +210,32 @@ class ApiClient:
             timeout=self.timeout,
         )
 
-    def delete_booking(self, booking_id: int, auth: tuple[str, str]) -> requests.Response:
-        """Delete a test-owned booking during cleanup.
+    def delete_booking(
+        self,
+        booking_id: int | str,
+        auth: tuple[str, str] | None = None,
+        token: str | None = None,
+        authorization: str | None = None
+    ) -> requests.Response:
+        """Delete one booking using an explicit authentication mechanism.
 
         Args:
-            booking_id: ID of the booking to delete.
+            booking_id: ID encoded as a single URL path segment.
             auth: Username and password for HTTP Basic authentication.
+            token: Cookie token sent for this request only.
+            authorization: Raw Authorization header for malformed-header scenarios.
 
         Returns:
             requests.Response: Booking deletion response returned by the service.
 
         Raises:
             requests.RequestException: The request fails, including timeouts.
+            ValueError: Multiple authentication mechanisms are supplied.
         """
-        path = DELETE_BOOKING_PATH.format(booking_id=booking_id)
-        return self.session.delete(f'{self.base_url}{path}', auth=auth, timeout=self.timeout)
+        if sum(value is not None for value in (token, auth, authorization)) > 1:
+            raise ValueError('Provide only one authentication mechanism')
+        path = DELETE_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
+        headers = {'Authorization': authorization}
+        if token is not None:
+            headers['Cookie'] = f'token={token}'
+        return self.session.delete(f'{self.base_url}{path}', headers=headers, auth=auth, timeout=self.timeout)

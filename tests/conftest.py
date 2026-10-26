@@ -14,6 +14,7 @@ import requests
 
 from checkers.auth import check_created_token
 from checkers.bookings import booking_ids
+from checkers.delete_booking import check_deleted_booking
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
@@ -66,7 +67,8 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
 
     Yields:
         Callable[..., Booking]: Factory accepting optional firstname, lastname and depositpaid
-        overrides. Every registered booking is deleted at teardown.
+        overrides. Every registered booking is deleted at teardown; records already
+        deleted by the test are confirmed absent through GET.
 
     Raises:
         AssertionError: Cleanup fails for one or more registered bookings.
@@ -115,9 +117,11 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
                 booking_id,
                 auth=(BOOKER_USERNAME, BOOKER_PASSWORD),
             )
-            if response.status_code != 201:
+            if response.status_code == 405:
+                check_deleted_booking(api, booking_id)
+            elif response.status_code != 201:
                 errors.append(f'ID {booking_id}: HTTP {response.status_code}')
-        except requests.RequestException as error:
+        except (AssertionError, requests.RequestException) as error:
             errors.append(f'ID {booking_id}: {error}')
     assert not errors, 'Cleanup failed: ' + '; '.join(errors)
 

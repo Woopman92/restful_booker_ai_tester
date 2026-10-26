@@ -4,11 +4,11 @@ from typing import Any
 
 import pytest
 
+from checkers.bookings import check_booking
 from checkers.common import check_status_code
 from checkers.get_booking import check_xml_booking
 from checkers.update_booking import UpdateValuesMismatch
 from checkers.update_booking import check_form_update_response
-from checkers.update_booking import check_saved_booking
 from checkers.update_booking import check_update_booking_response
 from checkers.update_booking import check_update_response_schema
 from checkers.update_booking import check_update_values
@@ -29,13 +29,13 @@ class TestUpdateBookingContract:
         """Replace every field with Basic authentication and preserve the original booking ID."""
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_repeated_update(self, api: ApiClient, updated_booking: Booking, basic_auth: tuple[str, str]) -> None:
         """Repeat the fixture's valid PUT and verify the same persisted replacement state."""
         response = api.update_booking(updated_booking.booking_id, updated_booking.payload, auth=basic_auth)
         check_update_booking_response(response, updated_booking.payload)
-        check_saved_booking(api, updated_booking.booking_id, updated_booking.payload)
+        check_booking(api, updated_booking.booking_id, updated_booking.payload)
 
 
 class TestUpdateBookingAuthorization:
@@ -47,7 +47,7 @@ class TestUpdateBookingAuthorization:
         """Authorize a complete replacement using only a newly issued Cookie token."""
         response = api.update_booking(booking.booking_id, replacement_payload, token=token)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
 
 class TestUpdateBookingValues:
@@ -65,7 +65,7 @@ class TestUpdateBookingValues:
         """Invert the initial deposit flag with one PUT and verify the persisted value."""
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('price', [-1, 0, 1], ids=['negative', 'zero', 'positive'])
     def test_integer_price(
@@ -80,7 +80,7 @@ class TestUpdateBookingValues:
         replacement_payload['totalprice'] = price
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_fractional_price(
         self,
@@ -103,7 +103,7 @@ class TestUpdateBookingValues:
             )
         )
         check_update_values(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['', 'x'], ids=['empty', 'one-character'])
@@ -120,7 +120,7 @@ class TestUpdateBookingValues:
         replacement_payload[field] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_special_strings(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
@@ -130,7 +130,7 @@ class TestUpdateBookingValues:
         replacement_payload['additionalneeds'] = 'Завтрак & tea <without sugar>'
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['a' * 1024, 'Ж' * 1024], ids=['ascii-1024', 'unicode-1024'])
@@ -148,7 +148,7 @@ class TestUpdateBookingValues:
         replacement_payload[field] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize(
         ('checkin', 'checkout'),
@@ -168,7 +168,7 @@ class TestUpdateBookingValues:
         replacement_payload['bookingdates'] = {'checkin': checkin, 'checkout': checkout}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
 
 class TestUpdateBookingFormats:
@@ -199,7 +199,7 @@ class TestUpdateBookingFormats:
         response = api.update_booking(booking.booking_id, body=body, content_type='text/xml', auth=basic_auth)
         check_update_response_schema(response)
         check_update_values(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_xml_output(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
@@ -209,7 +209,7 @@ class TestUpdateBookingFormats:
             booking.booking_id, replacement_payload, auth=basic_auth, accept='application/xml'
         )
         check_xml_booking(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize(
         'booking',
@@ -241,7 +241,7 @@ class TestUpdateBookingFormats:
         )
         check_update_response_schema(response)
         check_update_values(response, replacement_payload)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_form_output(
         self,
@@ -259,7 +259,7 @@ class TestUpdateBookingFormats:
             accept='application/x-www-form-urlencoded',
         )
         check_status_code(response, 200)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,

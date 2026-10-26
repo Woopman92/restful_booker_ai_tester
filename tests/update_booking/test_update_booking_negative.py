@@ -6,11 +6,11 @@ from typing import Any
 
 import pytest
 
+from checkers.bookings import check_booking
 from checkers.bookings import check_booking_ids
 from checkers.common import check_plain_text_error
 from checkers.update_booking import check_current_saved_booking
 from checkers.update_booking import check_current_update_response
-from checkers.update_booking import check_saved_booking
 from helpers.models import Booking
 from tests.client import ApiClient
 
@@ -25,7 +25,7 @@ class TestUpdateBookingInvalidAuth:
         # Error handling is unspecified; record HTTP 403 with no persisted update.
         response = api.update_booking(booking.booking_id, replacement_payload)
         check_plain_text_error(response, expected_status_code=403)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('invalid_token', ['', 'invalid'], ids=['empty-token', 'unknown-token'])
     def test_invalid_token(
@@ -35,7 +35,7 @@ class TestUpdateBookingInvalidAuth:
         # Error handling is unspecified; record HTTP 403 with no persisted update.
         response = api.update_booking(booking.booking_id, replacement_payload, token=invalid_token)
         check_plain_text_error(response, expected_status_code=403)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['username', 'password'])
     def test_invalid_basic_credentials(
@@ -53,7 +53,7 @@ class TestUpdateBookingInvalidAuth:
         auth = credentials['username'], credentials['password']
         response = api.update_booking(booking.booking_id, replacement_payload, auth=auth)
         check_plain_text_error(response, expected_status_code=403)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('authorization', ['Bearer invalid', 'Basic !!!'], ids=['wrong-scheme', 'malformed-basic'])
     def test_malformed_authorization(
@@ -63,7 +63,7 @@ class TestUpdateBookingInvalidAuth:
         # Error handling is unspecified; record HTTP 403 with no persisted update.
         response = api.update_booking(booking.booking_id, replacement_payload, authorization=authorization)
         check_plain_text_error(response, expected_status_code=403)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
 
 class TestUpdateBookingMissingFields:
@@ -83,7 +83,7 @@ class TestUpdateBookingMissingFields:
         del replacement_payload[field]
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['checkin', 'checkout'])
     def test_missing_nested_date(
@@ -99,7 +99,7 @@ class TestUpdateBookingMissingFields:
         del replacement_payload['bookingdates'][field]
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     def test_missing_additionalneeds(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
@@ -130,7 +130,7 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload[field] = None
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['checkin', 'checkout'])
     def test_null_nested_date(
@@ -146,7 +146,7 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload['bookingdates'][field] = None
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname'])
     @pytest.mark.parametrize('value', [123, True, [], {}], ids=['number', 'boolean', 'array', 'object'])
@@ -164,7 +164,7 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload[field] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=500)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('value', [None, 123, True, [], {}], ids=['null', 'number', 'boolean', 'array', 'object'])
     def test_unvalidated_additionalneeds(
@@ -246,7 +246,7 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload['bookingdates'] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
 
 class TestUpdateBookingInvalidDates:
@@ -310,7 +310,7 @@ class TestUpdateBookingInvalidPayload:
         # Error handling is unspecified; record HTTP 400 without a persisted update.
         response = api.update_booking(booking.booking_id, body='', auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize(
         ('body', 'content_type'),
@@ -324,7 +324,7 @@ class TestUpdateBookingInvalidPayload:
         # Error handling is unspecified; record HTTP 400 without a persisted update.
         response = api.update_booking(booking.booking_id, body=body, content_type=content_type, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('content_type', ['text/plain', None], ids=['unsupported', 'absent'])
     def test_unparsed_content_type(
@@ -340,7 +340,7 @@ class TestUpdateBookingInvalidPayload:
         body = json.dumps(replacement_payload)
         response = api.update_booking(booking.booking_id, body=body, content_type=content_type, auth=basic_auth)
         check_plain_text_error(response, expected_status_code=400)
-        check_saved_booking(api, booking.booking_id, booking.payload)
+        check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('accept', ['application/pdf', None], ids=['unsupported', 'absent'])
     def test_unusable_accept(
@@ -355,7 +355,7 @@ class TestUpdateBookingInvalidPayload:
         # Error handling is unspecified; record HTTP 418 while all replacement fields are persisted.
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth, accept=accept)
         check_plain_text_error(response, expected_status_code=418)
-        check_saved_booking(api, booking.booking_id, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     def test_unknown_field(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]

@@ -7,7 +7,6 @@ from requests import Response
 
 from checkers.common import check_status_code
 from checkers.get_booking import check_booking_schema
-from checkers.get_booking import check_json_booking
 from tests.client import ApiClient
 
 
@@ -63,23 +62,6 @@ def check_update_booking_response(response: Response, expected_payload: dict[str
     """
     check_update_response_schema(response)
     check_update_values(response, expected_payload)
-
-
-def check_saved_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
-    """Retrieve an owned booking and verify the documented schema and saved values.
-
-    Args:
-        api: Client used for the independent read.
-        booking_id: ID of the original test-owned booking.
-        expected_payload: Fields expected after the update attempt.
-
-    Raises:
-        AssertionError: The retrieval response or saved values differ.
-        ValueError: JSON or a calendar date cannot be parsed.
-        requests.RequestException: The read request fails.
-    """
-    response = api.get_booking(booking_id)
-    check_json_booking(response, expected_payload)
 
 
 def check_current_update_response(response: Response, expected_payload: dict[str, Any]) -> None:

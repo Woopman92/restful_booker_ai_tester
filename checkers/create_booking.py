@@ -7,9 +7,7 @@ from xml.etree import ElementTree
 from requests import Response
 
 from checkers.get_booking import check_booking_schema
-from checkers.get_booking import check_json_booking
 from checkers.get_booking import check_xml_booking_data
-from tests.client import ApiClient
 
 
 def check_creation_schema(response: Response) -> int:
@@ -86,23 +84,6 @@ def check_create_booking_response(response: Response, expected_payload: dict[str
     booking_id = check_creation_schema(response)
     check_created_values(response, expected_payload)
     return booking_id
-
-
-def check_created_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
-    """Read a created booking and validate its persisted schema and values.
-
-    Args:
-        api: Client used to retrieve the test-owned booking.
-        booking_id: ID returned by the creation response checker.
-        expected_payload: Complete booking data expected to be persisted.
-
-    Raises:
-        AssertionError: The retrieval status, schema or saved values differ.
-        ValueError: JSON or a calendar date cannot be parsed.
-        requests.RequestException: The retrieval request fails.
-    """
-    response = api.get_booking(booking_id)
-    check_json_booking(response, expected_payload)
 
 
 def check_current_created_booking(response: Response, expected_payload: dict[str, Any]) -> None:
