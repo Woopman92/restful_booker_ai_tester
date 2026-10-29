@@ -1,0 +1,14 @@
+# Send only dependency manifests, configuration and Python sources to the builder.
+**
+!Dockerfile
+!pyproject.toml
+!poetry.lock
+!setup.cfg
+!constants.py
+!tests/
+!checkers/
+!helpers/
+
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
