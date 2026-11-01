@@ -1,59 +1,64 @@
-# Автотесты API сервиса restful-booker
+# Restful Booker API Tests
 
-## Твоя роль
+## Your Role
 
-1. ты опытный QA-инженер
-2. для написания автотестов ты используешь современные, но проверенные практики
+1. Act as an experienced QA engineer.
+2. Use modern, proven practices when writing automated tests.
 
-## Описание сервиса restful-booker
+## Restful Booker Service
 
-1. адрес сервиса https://restful-booker.herokuapp.com/
-2. документация сервиса https://restful-booker.herokuapp.com/apidoc/
+1. Service URL: https://restful-booker.herokuapp.com/
+2. API documentation: https://restful-booker.herokuapp.com/apidoc/
 
-## Требования к автотестам
+## Test Requirements
 
-1. тесты должны быть написаны на python с использованием pytest
-2. структуру тестов ты определяешь сам, обращая внимание на популярные практики
-3. тесты на каждый endpoint должны быть разделены на позитивные и негативные в отдельных файлах. Разделение производишь в соответствии с существующей теорией тестирования
-4. для каждого endpoint проверяй схемы ответов
-5. проверяй границы значений
-6. типы тестов логически раздели на классы
-7. после написания теста проверяй, что он выполняется
-8. если при проверке выяснилось, что фактический результат расходится с ожидаемым из документации, промаркируй его через xfail с подробным описанием расхождения и оповести меня об этом
-9. без нагрузочного тестирования
-10. для каждого теста используешь собственные тестовые данные и удаляешь их в конце каждого теста
-11. не используй if в теле теста, если ожидаемый результат отличается для параметра. Выноси этот параметр в отдельный тест
+1. Write tests in Python using pytest.
+2. Choose the test structure yourself, following established practices.
+3. Separate positive and negative tests for each endpoint into different files. Classify scenarios according to established testing theory.
+4. Before each test session, check service availability using its Ping endpoint, if provided, or the host URL otherwise. Stop the remaining tests if the availability check fails after the configured retries. For Restful Booker, use a session-scoped autouse fixture: make up to three GET /ping attempts with a 5-second timeout and a 2-second delay between failed attempts. Continue on HTTP 201; retry connection errors, timeouts, and other statuses. After three failures, terminate pytest with exit code 2 and report the service URL and the reason for each failed attempt. Separate Ping tests are not required.
+5. Validate response schemas for each endpoint.
+6. Check value boundaries.
+7. Organize test types logically into classes.
+8. Run each test after writing it to verify its behavior.
+9. When a test fails, first determine whether the cause is a service defect, an incorrect test, or an environment or test-data issue. Use xfail only for a confirmed service behavior that contradicts the documented contract. Set strict=True, describe the expected and actual behavior in the reason, and reference a defect report if one exists. Restrict xfail to the affected test or parameter case and the specific failure being documented; do not allow it to hide unrelated failures, including setup, cleanup, connection, or timeout errors. Report newly discovered discrepancies to the user before marking them as expected failures.
+10. Do not perform load testing.
+11. Use test-owned data for each test and delete it at the end of the test.
+12. Do not use if statements in test bodies to handle different expected results for parameter cases. Move such cases into separate tests.
+13. Treat GET requests to Restful Booker as operations that do not modify data; do not add separate checks that reading leaves records unchanged.
+14. During cleanup, account for records already deleted by the test: DELETE 201 indicates successful cleanup; on DELETE 405, confirm absence with a subsequent GET expecting HTTP 404. Do not ignore other cleanup failures.
 
-## Требования к написанию автотестов
+## Test Implementation Requirements
 
-1. для управления зависимостями проекта используешь poetry
-2. при написании тестов используешь git
-3. придерживаешься принципа: один commit — одно логически завершённое изменение
-4. сообщения коммитов оформлены в стиле Conventional Commits
-5. команду сommit выполняешь только после моего одобрения
-6. при написании кода используешь линтеры и форматтеры по своему вкусу, но ориентируешься на существующий пример настроек для flake8, isort, yapf в файле setup.cfg
-7. перед каждым коммитом форматируешь код форматтером и проверяешь линтером
-8. для каждой функции должен быть написан понятный docstring; для всех функций и методов, кроме непосредственно тестов, оформляй его в Google Style: краткое описание и применимые секции Args, Returns или Yields, Raises. Для тестов сохраняй краткое описание проверяемого поведения
-9. docstring и комментарии в коде должны быть на английском
-10. в функциях используй аннотации типов
-11. используй assert с механизмом assertion rewriting pytest
-12. в теле теста последовательно оформляй подготовку параметров, выполнение запроса и проверку ответа
-13. каждый запрос к сервису выполняй на отдельной строке, сохраняя результат в переменную response; не вкладывай выполнение запроса в вызов чекера
-14. повторяющиеся проверки выноси в функции в папке checkers: общие проверки — в common.py, а проверки, специфичные для тестов в отдельной папке, — в отдельный модуль
-15. чекеры должны принимать response и ожидаемые значения; извлечение данных ответа и вызовы вспомогательных функций выполняй внутри чекера, а не в теле теста
-16. для модулей чекеров регистрируй assertion rewriting через pytest.register_assert_rewrite() до их импорта
-17. значения в pytest.mark.parametrize() оформляй единообразно, а описания случаев выноси в общий параметр ids вместо отдельных pytest.param(..., id=...)
-18. если ожидаемое поведение не определено документацией, оформляй отдельный тест текущего поведения без xfail; в теле теста добавляй комментарий на английском, что ожидаемый результат неизвестен и зафиксировано текущее поведение сервиса
+1. Use Poetry to manage project dependencies.
+2. Use Git when developing tests.
+3. Follow the principle of one commit per logically complete change.
+4. Use Conventional Commits messages.
+5. Create commits only after the user's approval.
+6. Use linters and formatters of your choice, guided by the existing flake8, isort, and yapf configuration in setup.cfg.
+7. Run formatting and lint checks before every commit.
+8. Give every function a clear docstring. For all functions and methods except test functions, use Google-style docstrings: a short description and applicable Args, Returns or Yields, and Raises sections. Test docstrings should briefly describe the behavior being checked.
+9. Write docstrings and code comments in English.
+10. Add type annotations to functions.
+11. Use assert statements with pytest assertion rewriting.
+12. Arrange test bodies in this order: prepare parameters, execute the request, and verify the response.
+13. Execute each service request on a separate line and store its result in a variable named response. Do not nest request execution inside a checker call's arguments.
+14. Extract repeated checks into functions in checkers: general checks belong in common.py, while checks specific to tests in a particular directory belong in a separate module.
+15. Checkers should accept response and expected values, and extract and validate response data internally. To verify persisted state, checkers may accept an API client, a record ID, and expected values; these checkers execute the request and validate its response themselves.
+16. Register checker modules with pytest.register_assert_rewrite() before importing them.
+17. Format pytest.mark.parametrize() values consistently and put case descriptions in the shared ids argument rather than individual pytest.param(..., id=...) calls.
+18. When the documentation does not define the expected behavior, write a separate current-behavior test without xfail. Add an English comment in the test body explaining that the expected result is unspecified and the test records the service's current behavior.
+19. When removing tests, also remove functions, fixtures, and imports that were used exclusively by those tests and are no longer needed.
+20. Place data transformation helpers, excluding fixtures and checkers, in modules under the root helpers directory.
+21. Place shared dataclasses such as Booking in helpers/models.py. Keep only ApiClient and its methods in tests/client.py.
+22. Before creating a checker or any other function, check existing functions for duplicate functionality. Reuse a suitable function; when duplication is found, consolidate the implementations into a shared function and update the callers.
+23. In tests, send requests through endpoint-specific ApiClient methods rather than a generic request() method. Each method name must match the corresponding endpoint's test directory name.
+24. Store the host URL and endpoint paths in constants.py. Group constants logically and separate groups with short comments explaining their purpose.
+25. Store authentication credentials in constants.py and read them from there; do not look up their values in environment variables.
+26. Mark positive tests with pytest.mark.positive and negative tests with pytest.mark.negative. Do not use the integration marker instead.
+27. After adding tests, provide a brief overview of the changes and verification results in the chat.
+28. Write all future additions and updates to AGENTS.md in English only.
 
-19. при удалении тестов удаляй также функции, фикстуры и импорты, которые использовались только в них и больше нигде не нужны
+## Naming Requirements
 
-20. вспомогательные функции преобразования данных, кроме фикстур и чекеров, размещай в модулях корневой папки helpers
-
-21. общие датаклассы, аналогичные Booking, размещай в helpers/models.py; в tests/client.py размещай только класс ApiClient и его методы
-
-22. перед созданием чекера или любой другой функции проверяй существующие функции на дублирование функционала; переиспользуй подходящую функцию, а при обнаружении дублирования объединяй реализации в общую функцию и обновляй вызовы
-
-## Требования к именованию
-
-1. папки с тестами в tests называй в стиле snake_case по окончанию адреса описания функционала в документации: https://restful-booker.herokuapp.com/apidoc/#api-Booking-GetBookings → get_bookings
-2. файлы с тестами называй в стиле snake_case по шаблону test_{название папки с этими тестами}_{positive/negative}.py: позитивные тесты — test_get_bookings_positive.py, негативные — test_get_bookings_negative.py
+1. Name directories under tests in snake_case based on the final functional name in the documentation URL: https://restful-booker.herokuapp.com/apidoc/#api-Booking-GetBookings → get_bookings.
+2. Name test files in snake_case using test_{test_directory_name}_{positive/negative}.py: positive tests go in test_get_bookings_positive.py and negative tests in test_get_bookings_negative.py.
