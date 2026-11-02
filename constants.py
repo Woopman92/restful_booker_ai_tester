@@ -22,6 +22,6 @@ UPDATE_BOOKING_PATH = '/booking/{booking_id}'
 PARTIAL_UPDATE_BOOKING_PATH = '/booking/{booking_id}'
 DELETE_BOOKING_PATH = '/booking/{booking_id}'
 
-# Credentials for authentication and test data cleanup.
+# Public demo credentials published by Restful Booker; intentionally kept visible for authentication and cleanup.
 BOOKER_USERNAME = 'admin'
 BOOKER_PASSWORD = 'password123'
