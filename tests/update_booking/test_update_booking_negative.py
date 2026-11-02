@@ -14,7 +14,7 @@ from checkers.update_booking import check_current_update_response
 from helpers.models import Booking
 from tests.client import ApiClient
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestUpdateBookingInvalidAuth:

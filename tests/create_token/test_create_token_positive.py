@@ -35,6 +35,7 @@ class TestTokenUsage:
         check_booking_ids(response, {booking.booking_id})
 
 
+@pytest.mark.current_behavior
 class TestTokenReissuance:
     """Record current token uniqueness and validity after a second issuance."""
 

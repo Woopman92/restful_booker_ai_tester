@@ -13,7 +13,7 @@ and persistence after write operations. Positive and negative scenarios are sepa
 Each scenario uses its own booking data where needed and cleans it up afterward.
 A session-level Ping check with retries runs before the tests. Confirmed deviations
 from the documented contract use strict `xfail` markers; unspecified behavior is
-recorded separately without `xfail`. Load testing is outside the project scope.
+recorded separately without `xfail` and marked `current_behavior`. Load testing is outside the project scope.
 
 ## 2. Structure
 
@@ -108,7 +108,14 @@ Select tests and pass pytest options with `PYTEST_ARGS`:
 make test PYTEST_ARGS="tests/delete_booking -q"
 make test PYTEST_ARGS="--collect-only -q"
 make test PYTEST_ARGS="-m positive -q"
+make test PYTEST_ARGS="-m current_behavior -q"
+make test PYTEST_ARGS="-m 'not current_behavior' -q"
 ```
+
+`current_behavior` supplements `positive` or `negative` and identifies expectations
+based on observed, undocumented behavior. It does not make failures expected.
+Known deviations from documented behavior continue to use `xfail`.
+The same marker expressions work with `make test-local`.
 
 Override the service URL, regular API request timeout in seconds, or image name:
 

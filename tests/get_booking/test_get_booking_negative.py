@@ -6,16 +6,16 @@ from checkers.common import check_plain_text_error
 from helpers.models import Booking
 from tests.client import ApiClient
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestMissingBooking:
     """Record the response for a previously deleted test-owned booking."""
 
-    def test_deleted_booking(self, api: ApiClient, deleted_booking_id: int) -> None:
+    def test_deleted_booking(self, api: ApiClient, deleted_booking: Booking) -> None:
         """Return the observed plain-text 404 without leaking another booking."""
         # The expected error result is unspecified; record current behavior: HTTP 404 with Not Found.
-        response = api.get_booking(deleted_booking_id)
+        response = api.get_booking(deleted_booking.booking_id)
         check_plain_text_error(response, expected_status_code=404)
 
 

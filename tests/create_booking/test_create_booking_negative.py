@@ -10,7 +10,7 @@ from checkers.create_booking import check_current_created_booking
 from tests.client import ApiClient
 from tests.create_booking.support import CreationTracker
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestMissingBookingFields:

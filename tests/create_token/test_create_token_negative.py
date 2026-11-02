@@ -9,7 +9,7 @@ from checkers.auth import check_bad_credentials
 from checkers.common import check_plain_text_error
 from tests.client import ApiClient
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestInvalidCredentials:

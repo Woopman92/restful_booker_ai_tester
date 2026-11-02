@@ -7,7 +7,7 @@ from checkers.common import check_plain_text_error
 from helpers.models import Booking
 from tests.client import ApiClient
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestGetBookingsInvalidDates:

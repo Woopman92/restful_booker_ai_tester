@@ -22,7 +22,7 @@
 8. Run each test after writing it to verify its behavior.
 9. When a test fails, first determine whether the cause is a service defect, an incorrect test, or an environment or test-data issue. Use xfail only for a confirmed service behavior that contradicts the documented contract. Set strict=True, describe the expected and actual behavior in the reason, and reference a defect report if one exists. Restrict xfail to the affected test or parameter case and the specific failure being documented; do not allow it to hide unrelated failures, including setup, cleanup, connection, or timeout errors. Report newly discovered discrepancies to the user before marking them as expected failures.
 10. Do not perform load testing.
-11. Use test-owned data for each test and delete it at the end of the test.
+11. Use test-owned data for each test and delete it at the end of the test. Assume an isolated test environment where only the tester creates records. Delete records by their registered IDs without pre-deletion ownership or UUID checks; retain the cleanup status handling in item 14.
 12. Do not use if statements in test bodies to handle different expected results for parameter cases. Move such cases into separate tests.
 13. Treat GET requests to Restful Booker as operations that do not modify data; do not add separate checks that reading leaves records unchanged.
 14. During cleanup, account for records already deleted by the test: DELETE 201 indicates successful cleanup; on DELETE 405, confirm absence with a subsequent GET expecting HTTP 404. Do not ignore other cleanup failures.
@@ -46,7 +46,7 @@
 15. Checkers should accept response and expected values, and extract and validate response data internally. To verify persisted state, checkers may accept an API client, a record ID, and expected values; these checkers execute the request and validate its response themselves.
 16. Register checker modules with pytest.register_assert_rewrite() before importing them.
 17. Format pytest.mark.parametrize() values consistently and put case descriptions in the shared ids argument rather than individual pytest.param(..., id=...) calls.
-18. When the documentation does not define the expected behavior, write a separate current-behavior test without xfail. Add an English comment in the test body explaining that the expected result is unspecified and the test records the service's current behavior.
+18. When the documentation does not define the expected behavior, write a separate current-behavior test without xfail and mark it with pytest.mark.current_behavior in addition to positive or negative. This marker classifies observed behavior and does not change the test outcome. Add an English comment in the test body explaining that the expected result is unspecified and the test records the service's current behavior.
 19. When removing tests, also remove functions, fixtures, and imports that were used exclusively by those tests and are no longer needed.
 20. Place data transformation helpers, excluding fixtures and checkers, in modules under the root helpers directory.
 21. Place shared dataclasses such as Booking in helpers/models.py. Keep only ApiClient and its methods in tests/client.py.

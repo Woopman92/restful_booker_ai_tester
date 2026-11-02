@@ -17,7 +17,7 @@ from helpers.models import Booking
 from helpers.payloads import merge_booking_patch
 from tests.client import ApiClient
 
-pytestmark = pytest.mark.negative
+pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]
 
 
 class TestPartialUpdateBookingInvalidAuth:

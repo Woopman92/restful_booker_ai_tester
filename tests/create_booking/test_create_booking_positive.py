@@ -39,6 +39,7 @@ class TestCreateBookingContract:
         check_booking(api, second_id, second_payload)
 
 
+@pytest.mark.current_behavior
 class TestDuplicateBookingCreation:
     """Record current handling of repeated creation with identical booking data."""
 
@@ -116,6 +117,7 @@ class TestBookingValues:
         check_create_booking_response(response, booking_payload)
 
 
+@pytest.mark.current_behavior
 class TestLongBookingStrings:
     """Record creation and persistence of long ASCII and Unicode strings."""
 

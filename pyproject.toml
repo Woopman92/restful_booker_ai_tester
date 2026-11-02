@@ -22,4 +22,5 @@ xfail_strict = true
 markers = [
     "positive: positive API scenarios requiring the service and temporary bookings",
     "negative: negative API scenarios requiring the service and temporary bookings",
+    "current_behavior: observed service behavior whose expected result is not defined by the documentation",
 ]

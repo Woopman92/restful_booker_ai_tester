@@ -148,6 +148,7 @@ class TestPartialUpdateBookingFields:
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['a' * 1024, 'Ж' * 1024], ids=['ascii-1024', 'unicode-1024'])
+    @pytest.mark.current_behavior
     def test_current_long_string(
         self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str], field: str, value: str
     ) -> None:
