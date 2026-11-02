@@ -50,7 +50,7 @@
 19. When removing tests, also remove functions, fixtures, and imports that were used exclusively by those tests and are no longer needed.
 20. Place data transformation helpers, excluding fixtures and checkers, in modules under the root helpers directory.
 21. Place shared dataclasses such as Booking in helpers/models.py. Keep only ApiClient and its methods in tests/client.py.
-22. Before creating a checker or any other function, check existing functions for duplicate functionality. Reuse a suitable function; when duplication is found, consolidate the implementations into a shared function and update the callers.
+22. Before creating a checker or any other function, check existing functions for duplicate functionality. Reuse a suitable function; when duplication is found, consolidate functions with the same responsibility and semantics into a shared function and update the callers. Avoid universal functions with numerous behavioral switches; superficial code similarity alone is not a reason to merge functions.
 23. In tests, send requests through endpoint-specific ApiClient methods rather than a generic request() method. Each method name must match the corresponding endpoint's test directory name.
 24. Store the host URL and endpoint paths in constants.py. Group constants logically and separate groups with short comments explaining their purpose.
 25. Store authentication credentials in constants.py and read them from there; do not look up their values in environment variables.
