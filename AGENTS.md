@@ -34,7 +34,7 @@
 3. Follow the principle of one commit per logically complete change.
 4. Use Conventional Commits messages.
 5. Create commits only after the user's approval.
-6. Use linters and formatters of your choice, guided by the existing flake8, isort, and yapf configuration in setup.cfg.
+6. Use flake8 for linting, isort for import sorting, and yapf for code formatting, following their configuration in setup.cfg.
 7. Run formatting and lint checks before every commit.
 8. Give every function a clear docstring. For all functions and methods except test functions, use Google-style docstrings: a short description and applicable Args, Returns or Yields, and Raises sections. Test docstrings should briefly describe the behavior being checked.
 9. Write docstrings and code comments in English.
@@ -62,3 +62,14 @@
 
 1. Name directories under tests in snake_case based on the final functional name in the documentation URL: https://restful-booker.herokuapp.com/apidoc/#api-Booking-GetBookings → get_bookings.
 2. Name test files in snake_case using test_{test_directory_name}_{positive/negative}.py: positive tests go in test_get_bookings_positive.py and negative tests in test_get_bookings_negative.py.
+
+
+## Completion Criteria
+
+1. Implement the requested behavior within the agreed scope.
+2. Run new and modified tests. When shared components change, run the affected existing scenarios as regression checks. Run the full suite when the scope and risk of the change justify it; do not require a full run after every edit.
+3. Leave no unexplained test failures or setup and cleanup errors. Any xfail must satisfy the requirements for confirmed documented-contract discrepancies in Test Requirements.
+4. Ensure formatting and lint checks pass. For documentation-only changes, validate the edited content and relevant references; run code checks when applicable and always before a commit as required above.
+5. Update documentation when the change affects documented behavior, project structure, or commands.
+6. In the final response, summarize the changes, checks performed, results, and remaining limitations. Explicitly identify checks that could not be run and explain why; do not report unverified behavior as verified.
+7. Creating a commit is not required to complete a task and still requires the user's separate approval.
