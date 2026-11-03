@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from checkers.bookings import check_booking
+from checkers.common import check_booking
 from checkers.create_booking import check_create_booking_response
 from checkers.create_booking import check_created_values
 from checkers.create_booking import check_creation_schema

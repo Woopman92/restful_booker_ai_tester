@@ -6,8 +6,8 @@ from datetime import timedelta
 
 import pytest
 
-from checkers.bookings import check_booking_ids
-from checkers.bookings import check_booking_presence
+from checkers.common import check_booking_ids
+from checkers.get_bookings import check_booking_presence
 from helpers.models import Booking
 from tests.client import ApiClient
 

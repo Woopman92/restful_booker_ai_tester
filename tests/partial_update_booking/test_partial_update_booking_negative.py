@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from checkers.bookings import check_booking_ids
+from checkers.common import check_booking_ids
 from checkers.common import check_plain_text_error
 from checkers.partial_update_booking import check_current_partial_update_response
 from checkers.partial_update_booking import check_current_patched_booking

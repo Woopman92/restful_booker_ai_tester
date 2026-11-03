@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from checkers.auth import check_bad_credentials
 from checkers.common import check_plain_text_error
+from checkers.create_token import check_bad_credentials
 from tests.client import ApiClient
 
 pytestmark = [pytest.mark.negative, pytest.mark.current_behavior]

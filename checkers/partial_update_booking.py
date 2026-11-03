@@ -4,8 +4,8 @@ from typing import Any
 
 from requests import Response
 
+from checkers.common import check_booking_schema
 from checkers.common import check_status_code
-from checkers.get_booking import check_booking_schema
 from tests.client import ApiClient
 
 

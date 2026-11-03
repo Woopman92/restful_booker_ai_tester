@@ -13,8 +13,8 @@ from uuid import uuid4
 import pytest
 import requests
 
-from checkers.auth import check_created_token
-from checkers.bookings import booking_ids
+from checkers.common import booking_ids
+from checkers.create_token import check_created_token
 from checkers.delete_booking import check_deleted_booking
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD

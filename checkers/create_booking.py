@@ -6,8 +6,8 @@ from xml.etree import ElementTree
 
 from requests import Response
 
-from checkers.get_booking import check_booking_schema
-from checkers.get_booking import check_xml_booking_data
+from checkers.common import check_booking_schema
+from checkers.common import check_xml_booking_data
 
 
 def check_creation_schema(response: Response) -> int:

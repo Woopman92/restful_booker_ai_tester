@@ -24,8 +24,9 @@ recorded separately without `xfail` and marked `current_behavior`. Load testing 
 │   ├── conftest.py            # Shared fixtures, session health check and cleanup
 │   └── <endpoint>/            # Endpoint-specific positive and negative test modules
 ├── checkers/                  # Reusable response and persisted-state checks
-│   ├── common.py              # General response checks
-│   └── bookings.py            # Shared booking checks
+│   ├── common.py              # Checks shared across endpoint test groups
+│   ├── get_bookings.py        # GetBookings-specific checks
+│   └── create_token.py        # CreateToken-specific checks
 ├── helpers/
 │   ├── models.py              # Shared dataclasses
 │   └── payloads.py            # Payload transformations and serialization

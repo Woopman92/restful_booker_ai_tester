@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from checkers.bookings import check_booking
-from checkers.bookings import check_booking_ids
+from checkers.common import check_booking
+from checkers.common import check_booking_ids
 from checkers.common import check_plain_text_error
 from checkers.update_booking import check_current_saved_booking
 from checkers.update_booking import check_current_update_response

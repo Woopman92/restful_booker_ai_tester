@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 from requests import Response
 
-from checkers.bookings import booking_ids
+from checkers.common import booking_ids
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
 from constants import CREATE_BOOKING_PATH

@@ -1,12 +1,11 @@
 """Update response, persistence and observed invalid-input checks."""
 
 from typing import Any
-from urllib.parse import parse_qs
 
 from requests import Response
 
+from checkers.common import check_booking_schema
 from checkers.common import check_status_code
-from checkers.get_booking import check_booking_schema
 from tests.client import ApiClient
 
 
@@ -96,24 +95,3 @@ def check_current_saved_booking(api: ApiClient, booking_id: int, expected_payloa
     """
     response = api.get_booking(booking_id)
     check_current_update_response(response, expected_payload)
-
-
-def check_form_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
-    """Check the URL-encoded update representation shown in the documentation.
-
-    Args:
-        response: Update response requested as form-urlencoded.
-        expected_payload: Expected booking fields.
-
-    Raises:
-        AssertionError: The status or encoded fields differ from the example structure.
-        ValueError: The body is not valid URL-encoded data.
-    """
-    check_status_code(response, 200)
-    assert '=' in response.text, response.text
-    fields = parse_qs(response.text, keep_blank_values=True, strict_parsing=True)
-    for name in ('firstname', 'lastname', 'totalprice', 'additionalneeds'):
-        assert fields.get(name) == [str(expected_payload[name])]
-    assert fields.get('depositpaid') == [str(expected_payload['depositpaid']).lower()]
-    for name in ('checkin', 'checkout'):
-        assert fields.get(f'bookingdates[{name}]') == [expected_payload['bookingdates'][name]]

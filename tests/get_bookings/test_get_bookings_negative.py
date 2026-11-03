@@ -2,7 +2,7 @@
 
 import pytest
 
-from checkers.bookings import booking_ids
+from checkers.common import booking_ids
 from checkers.common import check_plain_text_error
 from helpers.models import Booking
 from tests.client import ApiClient

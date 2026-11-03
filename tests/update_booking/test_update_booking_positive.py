@@ -4,11 +4,11 @@ from typing import Any
 
 import pytest
 
-from checkers.bookings import check_booking
+from checkers.common import check_booking
+from checkers.common import check_form_update_response
 from checkers.common import check_status_code
-from checkers.get_booking import check_xml_booking
+from checkers.common import check_xml_booking
 from checkers.update_booking import UpdateValuesMismatch
-from checkers.update_booking import check_form_update_response
 from checkers.update_booking import check_update_booking_response
 from checkers.update_booking import check_update_response_schema
 from checkers.update_booking import check_update_values

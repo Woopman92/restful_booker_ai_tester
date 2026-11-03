@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import pytest
 
-from checkers.bookings import check_booking
+from checkers.common import check_booking
 from checkers.delete_booking import check_delete_response
 from checkers.delete_booking import check_deleted_booking
 from helpers.models import Booking

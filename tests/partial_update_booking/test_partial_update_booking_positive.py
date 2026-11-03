@@ -4,12 +4,12 @@ from typing import Any
 
 import pytest
 
+from checkers.common import check_form_update_response
 from checkers.common import check_status_code
-from checkers.get_booking import check_xml_booking
+from checkers.common import check_xml_booking
 from checkers.partial_update_booking import PartialUpdateMismatch
 from checkers.partial_update_booking import check_partial_update_response
 from checkers.partial_update_booking import check_patched_booking
-from checkers.update_booking import check_form_update_response
 from helpers.models import Booking
 from helpers.payloads import form_payload
 from helpers.payloads import merge_booking_patch

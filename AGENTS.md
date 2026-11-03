@@ -42,7 +42,7 @@
 11. Use assert statements with pytest assertion rewriting.
 12. Arrange test bodies in this order: prepare parameters, execute the request, and verify the response.
 13. Execute each service request on a separate line and store its result in a variable named response. Do not nest request execution inside a checker call's arguments.
-14. Extract repeated checks into functions in checkers: general checks belong in common.py, while checks specific to tests in a particular directory belong in a separate module.
+14. Extract repeated checks into functions in checkers. Place checks shared across endpoint test groups in common.py, including shared booking response, schema, and persistence checks. Place endpoint-specific checks in a module named after the corresponding test directory, such as get_bookings.py or create_token.py.
 15. Checkers should accept response and expected values, and extract and validate response data internally. To verify persisted state, checkers may accept an API client, a record ID, and expected values; these checkers execute the request and validate its response themselves.
 16. Register checker modules with pytest.register_assert_rewrite() before importing them.
 17. Format pytest.mark.parametrize() values consistently and put case descriptions in the shared ids argument rather than individual pytest.param(..., id=...) calls.
