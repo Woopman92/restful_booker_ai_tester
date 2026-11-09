@@ -1,0 +1,39 @@
+name: Create pull request
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    if: github.event.created && !github.event.deleted
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Create PR if absent
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+        run: |
+          count=$(gh pr list \
+            --base main \
+            --head "$HEAD_BRANCH" \
+            --state open \
+            --json number \
+            --jq 'length')
+
+          if [ "$count" = "0" ]; then
+            gh pr create \
+              --base main \
+              --head "$HEAD_BRANCH" \
+              --title "$HEAD_BRANCH" \
+              --body "Automatically opened after the first branch push."
+          fi

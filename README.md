@@ -162,3 +162,34 @@ make format-local
 `PYTEST_ARGS`, `BOOKER_BASE_URL`, and `BOOKER_TIMEOUT` work the same way as for
 container runs. You do not need to activate the virtual environment manually.
 Use `make help` to list all available targets.
+
+## 7. Automatic PRs
+
+The `.github/workflows/auto-pr.yml` workflow opens a pull request into `main` on
+the first push of a new branch to this repository. It skips `main`, branch
+deletions, and subsequent pushes, and checks for an existing open PR before
+creating one. Later commits pushed to the branch appear in the same PR.
+
+Enable **Settings → Actions → General → Workflow permissions → Allow GitHub
+Actions to create and approve pull requests**. The workflow uses GitHub's
+provided token; no personal token, local GitHub CLI installation, or SSH key
+is needed on the runner. It does not approve or merge PRs.
+
+First publish the workflow to `main`. Then create a branch containing changes
+relative to `main` before its first push:
+
+```sh
+git switch main
+git pull --ff-only
+git switch -c feature/example
+# Make changes and commit them before pushing
+git push -u origin feature/example
+```
+
+Check the workflow result on GitHub's **Actions** tab and the new PR on the
+**Pull requests** tab. A branch identical to `main` cannot produce a PR. If the
+first run fails, fix the cause and rerun the failed job from **Actions**.
+
+PRs opened with `GITHUB_TOKEN` generally do not trigger other workflows listening
+for `pull_request` events. Run future CI checks on `push`, or use a suitable
+GitHub App token if automatic PR-triggered CI is required.
