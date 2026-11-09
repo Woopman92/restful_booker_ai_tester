@@ -17,10 +17,6 @@ jobs:
       - name: Check out tested commit
         uses: actions/checkout@v6
 
-      # Temporary smoke check: the proposed revert must remove this step.
-      - name: Simulate a failed main check for revert verification
-        run: exit 1
-
       - name: Build image and run all tests
         run: make test
 
