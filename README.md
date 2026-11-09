@@ -21,7 +21,9 @@ recorded separately without `xfail` and marked `current_behavior`. Load testing 
 .
 ├── .github/workflows/
 │   ├── auto-pr.yml            # Open a PR on the first push of a new branch
+│   ├── main-tests.yml         # Test main and propose a revert PR on failure
 │   └── tests.yml              # Build the Docker image and run all API tests
+├── .github/scripts/           # Automation for proposing revert pull requests
 ├── tests/
 │   ├── client.py              # Endpoint-specific ApiClient methods
 │   ├── conftest.py            # Shared fixtures, session health check and cleanup
@@ -210,3 +212,41 @@ fail the job; documented expected failures (`xfail`) remain allowed.
 View results and pytest output on the **Actions** tab or in the PR checks.
 The workflow alone does not block merging: after publishing it and running it
 once, make `API tests` a required status check in the ruleset for `main`.
+
+The workflow also supports **Actions → API tests → Run workflow**. Select the
+branch to test; the resulting `API tests` check belongs to that branch's commit.
+
+## 9. Revert Proposals
+
+The `Main API tests` workflow runs `make test` after every push to `main`.
+On failure, including a build or service availability failure, a separate job
+creates a branch named `revert/failed-main-<commit SHA>` and opens a PR into
+`main`. Review the failed run before deciding whether to apply the revert.
+The workflow never approves or merges PRs, and does not bypass branch rules.
+The proposal runs only when GitHub reports the test job as failed; canceled and
+skipped jobs do not create a revert proposal.
+
+The proposal reverts the original push's first-parent commit range, supporting
+merge commits, squash merges, and rebase merges. It starts from the latest
+`main`, preserving later changes when the revert applies without conflicts.
+Conflicts fail the proposal job and require manual resolution; inspect its logs.
+Only updates associated with a merged PR are eligible. Direct pushes are tested
+but do not generate a revert PR. A merged automatic revert never generates
+another automatic revert, preventing a rollback loop.
+
+The deterministic branch name prevents duplicate PRs on reruns, including when
+the previous PR was closed. If branch publication succeeded but PR creation
+failed, a rerun reuses the published branch. Later changes to `main` may require
+updating that PR before it can be merged.
+
+The proposal job uses `GITHUB_TOKEN` with `contents: write` and
+`pull-requests: write`; the test job has read-only repository access. Keep
+**Allow GitHub Actions to create and approve pull requests** enabled.
+No additional secrets or ruleset bypass permissions are needed.
+
+Pushes made with `GITHUB_TOKEN` do not start push-triggered CI. For a revert PR,
+manually run **Actions → API tests → Run workflow** against its revert branch.
+The workflow must first exist on `main`, and the selected branch must contain
+the `workflow_dispatch` trigger. If the revert removes that trigger (for example,
+when reverting its introduction), publish a reviewed commit to the revert branch
+to trigger push checks instead. Required checks still apply before manual merge.
