@@ -75,9 +75,10 @@ build, or infrastructure issue rather than a regression. Inspect the run before
 deciding whether to merge; this workflow never approves or merges the PR.
 
 The branch was pushed with GITHUB_TOKEN, so push-triggered CI does not start
-automatically. Run the API tests workflow manually against this branch before
-merging. If that branch does not contain workflow_dispatch support, publish a
-reviewed commit to it to trigger the normal push checks instead.
+automatically. Publish a reviewed commit to this branch using your own GitHub
+credentials to trigger the required API tests check. An empty commit is enough
+if no code changes are needed. A manual workflow_dispatch run does not satisfy
+required status checks, even when it succeeds for the same commit.
 EOF
 
 gh pr create --base main --head "$branch" \
