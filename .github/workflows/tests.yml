@@ -18,5 +18,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Verify required check blocks merging
+        run: exit 1
+
       - name: Build image and run all tests
         run: make test
