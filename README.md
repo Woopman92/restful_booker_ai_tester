@@ -19,6 +19,9 @@ recorded separately without `xfail` and marked `current_behavior`. Load testing 
 
 ```text
 .
+├── .github/workflows/
+│   ├── auto-pr.yml            # Open a PR on the first push of a new branch
+│   └── tests.yml              # Build the Docker image and run all API tests
 ├── tests/
 │   ├── client.py              # Endpoint-specific ApiClient methods
 │   ├── conftest.py            # Shared fixtures, session health check and cleanup
@@ -190,6 +193,20 @@ Check the workflow result on GitHub's **Actions** tab and the new PR on the
 **Pull requests** tab. A branch identical to `main` cannot produce a PR. If the
 first run fails, fix the cause and rerun the failed job from **Actions**.
 
-PRs opened with `GITHUB_TOKEN` generally do not trigger other workflows listening
-for `pull_request` events. Run future CI checks on `push`, or use a suitable
-GitHub App token if automatic PR-triggered CI is required.
+## 8. CI Tests
+
+The `.github/workflows/tests.yml` workflow runs on every branch push except
+`main`, including the first push and subsequent updates. Its `API tests` job
+checks out the pushed commit on an Ubuntu runner and executes `make test`, which
+builds the Docker image and runs the complete pytest suite. The job has read-only
+repository permissions and a 30-minute timeout.
+
+Tests run independently of automatic PR creation. Using `push` avoids depending
+on approval of workflows triggered by PRs created with `GITHUB_TOKEN`.
+The runner needs network access to the Docker registry, PyPI, and Restful Booker.
+Test failures, setup or cleanup errors, and an unsuccessful session Ping check
+fail the job; documented expected failures (`xfail`) remain allowed.
+
+View results and pytest output on the **Actions** tab or in the PR checks.
+The workflow alone does not block merging: after publishing it and running it
+once, make `API tests` a required status check in the ruleset for `main`.
