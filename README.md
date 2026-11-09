@@ -213,8 +213,10 @@ View results and pytest output on the **Actions** tab or in the PR checks.
 The workflow alone does not block merging: after publishing it and running it
 once, make `API tests` a required status check in the ruleset for `main`.
 
-The workflow also supports **Actions → API tests → Run workflow**. Select the
-branch to test; the resulting `API tests` check belongs to that branch's commit.
+The workflow also supports **Actions → API tests → Run workflow** for diagnostic
+runs. Select the branch to test. GitHub does not count checks from
+`workflow_dispatch` runs toward required PR status checks, even if the run
+succeeds for the PR's latest commit.
 
 ## 9. Revert Proposals
 
@@ -245,8 +247,20 @@ The proposal job uses `GITHUB_TOKEN` with `contents: write` and
 No additional secrets or ruleset bypass permissions are needed.
 
 Pushes made with `GITHUB_TOKEN` do not start push-triggered CI. For a revert PR,
-manually run **Actions → API tests → Run workflow** against its revert branch.
-The workflow must first exist on `main`, and the selected branch must contain
-the `workflow_dispatch` trigger. If the revert removes that trigger (for example,
-when reverting its introduction), publish a reviewed commit to the revert branch
-to trigger push checks instead. Required checks still apply before manual merge.
+publish a reviewed commit to its branch using your own GitHub credentials.
+If no code changes are needed, an empty commit triggers the normal `push`
+workflow without altering the files:
+
+```sh
+git fetch origin
+git switch --track origin/revert/failed-main-<commit-SHA>
+git commit --allow-empty -m "ci: trigger required tests for revert"
+git push
+```
+
+If the branch already exists locally, switch to it and update it with
+`git pull --ff-only` instead of creating it again. Replace `<commit-SHA>` with
+the failed commit's SHA from the revert PR. Wait for the push-triggered
+`API tests` check before merging manually. A successful manual
+`workflow_dispatch` run cannot replace this check. These limitations are
+documented in [GitHub's required checks troubleshooting guide](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks#checks-from-some-workflow-jobs-are-not-evaluated).
