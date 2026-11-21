@@ -7,6 +7,7 @@ from datetime import timedelta
 import pytest
 
 from checkers.common import check_booking_ids
+from checkers.errors import ResponseValuesMismatch
 from checkers.get_bookings import check_booking_presence
 from helpers.models import Booking
 from tests.client import ApiClient
@@ -92,7 +93,7 @@ class TestGetBookingsDateFilters:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=ResponseValuesMismatch,
                 reason=f'GetBookings documents {field} >= filter date. '
                 'Observed: checkin excludes equality; checkout excludes a booking after the filter '
                 'and includes a booking before it. Confirmed against the public API.',
@@ -112,7 +113,7 @@ class TestGetBookingsDateFilters:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=ResponseValuesMismatch,
                 reason='GetBookings documents checkout >= filter date; all four matching filters return [] '
                 'for a booking with checkout 2030-06-20 and checkout filter 2030-06-19.',
             )

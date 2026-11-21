@@ -10,6 +10,8 @@ from checkers.create_booking import check_created_values
 from checkers.create_booking import check_creation_schema
 from checkers.create_booking import check_form_created_booking
 from checkers.create_booking import check_xml_created_booking
+from checkers.errors import FormResponseMismatch
+from checkers.errors import ResponseValuesMismatch
 from helpers.payloads import form_payload
 from helpers.payloads import xml_payload
 from tests.client import ApiClient
@@ -83,7 +85,7 @@ class TestBookingValues:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=ResponseValuesMismatch,
                 reason='CreateBooking documents totalprice as Number without an integer restriction; '
                 'sending 123.5 currently returns 123, losing the fractional part.',
             )
@@ -176,7 +178,7 @@ class TestBookingFormats:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=FormResponseMismatch,
                 reason='CreateBooking shows a URL-encoded response example; the service instead returns HTTP 200 '
                 'text/html "formurlencoded is not a function". The record is created without an ID in the response '
                 'and is recovered by unique names and deleted at teardown.',

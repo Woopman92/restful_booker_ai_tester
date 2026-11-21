@@ -40,7 +40,7 @@ def creation_tracker(api: ApiClient, booking_payload: dict[str, Any]) -> Iterato
         CreationTracker: Registry installed as a temporary session response hook.
 
     Raises:
-        AssertionError: Cleanup or lookup of unexpectedly created data fails.
+        CleanupError: Cleanup or lookup of unexpectedly created data fails.
     """
     tracker = CreationTracker(api, booking_payload, {key: booking_payload[key] for key in ('firstname', 'lastname')})
     api.session.hooks['response'].append(tracker.capture)

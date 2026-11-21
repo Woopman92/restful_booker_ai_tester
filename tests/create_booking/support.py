@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 from requests import Response
 
 from checkers.common import booking_ids
+from checkers.errors import CleanupError
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
 from constants import CREATE_BOOKING_PATH
@@ -62,7 +63,8 @@ class CreationTracker:
         """Discover unreported creations and attempt deletion of every registered record.
 
         Raises:
-            AssertionError: ID discovery or deletion fails; known IDs are still cleaned up.
+            CleanupError: Discovery, deletion or hidden-record counts are unexpected.
+                Deletion is attempted for every known ID before raising.
         """
         errors = []
         if self.needs_lookup:
@@ -81,7 +83,7 @@ class CreationTracker:
                     errors.append(f'ID {booking_id}: HTTP {response.status_code}')
             except Exception as error:
                 errors.append(f'ID {booking_id}: {error}')
-        assert not errors, 'Cleanup failed: ' + '; '.join(errors)
-        assert len(self.recovered_ids) == self.expected_recovered_count, (
-            f'Unexpected records hidden by a creation response: {sorted(self.recovered_ids)}'
-        )
+        if len(self.recovered_ids) != self.expected_recovered_count:
+            errors.append(f'Unexpected records hidden by a creation response: {sorted(self.recovered_ids)}')
+        if errors:
+            raise CleanupError('Cleanup failed: ' + '; '.join(errors))

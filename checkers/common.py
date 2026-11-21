@@ -8,6 +8,8 @@ from xml.etree import ElementTree
 
 from requests import Response
 
+from checkers.errors import FormResponseMismatch
+from checkers.errors import ResponseValuesMismatch
 from tests.client import ApiClient
 
 
@@ -75,11 +77,15 @@ def check_booking_ids(response: Response, expected_ids: set[int]) -> None:
         expected_ids: Complete set of IDs expected in the response.
 
     Raises:
-        AssertionError: Response validation fails or the ID sets differ.
+        AssertionError: Response status, media type or schema is invalid.
+        ResponseValuesMismatch: The ID sets differ.
         ValueError: The response body is not valid JSON.
     """
     actual_ids = booking_ids(response)
-    assert actual_ids == expected_ids
+    try:
+        assert actual_ids == expected_ids
+    except AssertionError as error:
+        raise ResponseValuesMismatch(str(error)) from error
 
 
 def check_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
@@ -127,6 +133,21 @@ def check_booking_schema(body: Any) -> None:
         AssertionError: Required fields, types or date representations are invalid.
         ValueError: A calendar date cannot be parsed.
     """
+    check_booking_field_types(body)
+    for field in ('checkin', 'checkout'):
+        value = body['bookingdates'][field]
+        assert date.fromisoformat(value).isoformat() == value
+
+
+def check_booking_field_types(body: Any) -> None:
+    """Validate required booking fields and types independently of calendar values.
+
+    Args:
+        body: Decoded booking object to validate.
+
+    Raises:
+        AssertionError: A required field is missing or has an invalid JSON type.
+    """
     assert isinstance(body, dict)
     for field in ('firstname', 'lastname', 'additionalneeds'):
         assert isinstance(body.get(field), str), f'Expected string field {field}'
@@ -136,7 +157,24 @@ def check_booking_schema(body: Any) -> None:
     for field in ('checkin', 'checkout'):
         value = body['bookingdates'].get(field)
         assert isinstance(value, str)
-        assert date.fromisoformat(value).isoformat() == value
+
+
+def _check_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
+    """Compare booking data and top-level value types after response validation.
+
+    Args:
+        actual: Decoded booking data from a validated response envelope.
+        expected: Expected booking values, including current-behavior cases.
+
+    Raises:
+        ResponseValuesMismatch: Booking values or their types differ.
+    """
+    try:
+        assert actual == expected
+        for name, value in expected.items():
+            assert type(actual[name]) is type(value), f'Unexpected type for {name}'
+    except AssertionError as error:
+        raise ResponseValuesMismatch(str(error)) from error
 
 
 def _booking_text_fields(payload: dict[str, Any]) -> dict[str, str]:
@@ -204,13 +242,33 @@ def check_form_update_response(response: Response, expected_payload: dict[str, A
 
     Raises:
         AssertionError: The status or encoded fields differ from the example structure.
+        FormResponseMismatch: The service returns its confirmed serializer error.
         ValueError: The body is not valid URL-encoded data.
     """
-    check_status_code(response, 200)
-    assert '=' in response.text, response.text
-    fields = parse_qs(response.text, keep_blank_values=True, strict_parsing=True)
+    fields = form_response_fields(response)
     for name in ('firstname', 'lastname', 'totalprice', 'additionalneeds'):
         assert fields.get(name) == [str(expected_payload[name])]
     assert fields.get('depositpaid') == [str(expected_payload['depositpaid']).lower()]
     for name in ('checkin', 'checkout'):
         assert fields.get(f'bookingdates[{name}]') == [expected_payload['bookingdates'][name]]
+
+
+def form_response_fields(response: Response) -> dict[str, list[str]]:
+    """Parse form fields while identifying the confirmed serializer error separately.
+
+    Args:
+        response: Response requested as application/x-www-form-urlencoded.
+
+    Returns:
+        dict[str, list[str]]: Parsed fields, including blank values.
+
+    Raises:
+        AssertionError: The HTTP status or body structure is unexpected.
+        FormResponseMismatch: The service returns its confirmed serializer error.
+        ValueError: The response is not valid form data.
+    """
+    check_status_code(response, 200)
+    if response.text == 'formurlencoded is not a function':
+        raise FormResponseMismatch(response.text)
+    assert '=' in response.text, response.text
+    return parse_qs(response.text, keep_blank_values=True, strict_parsing=True)
