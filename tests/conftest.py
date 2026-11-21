@@ -16,6 +16,7 @@ import requests
 from checkers.common import booking_ids
 from checkers.create_token import check_created_token
 from checkers.delete_booking import check_deleted_booking
+from checkers.errors import CleanupError
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
@@ -104,7 +105,7 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
         deleted by the test are confirmed absent through GET.
 
     Raises:
-        AssertionError: Cleanup fails for one or more registered bookings.
+        CleanupError: Cleanup fails for one or more registered bookings.
     """
     owned_ids: list[int] = []
 
@@ -156,7 +157,8 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
                 errors.append(f'ID {booking_id}: HTTP {response.status_code}')
         except (AssertionError, requests.RequestException) as error:
             errors.append(f'ID {booking_id}: {error}')
-    assert not errors, 'Cleanup failed: ' + '; '.join(errors)
+    if errors:
+        raise CleanupError('Cleanup failed: ' + '; '.join(errors))
 
 
 @pytest.fixture
@@ -226,7 +228,8 @@ def deleted_booking(api: ApiClient, basic_auth: tuple[str, str]) -> Iterator[Boo
         Booking: ID and original fields of the deleted booking.
 
     Raises:
-        AssertionError: Creation, deletion, recovery lookup or cleanup fails.
+        AssertionError: Initial creation or deletion fails.
+        CleanupError: Recovery lookup or cleanup fails.
         ValueError: A response is not valid JSON.
         requests.RequestException: A setup or cleanup request fails.
     """
@@ -248,8 +251,11 @@ def deleted_booking(api: ApiClient, basic_auth: tuple[str, str]) -> Iterator[Boo
         assert response.status_code == 201
         yield Booking(booking_id, payload)
     finally:
-        response = api.get_bookings(params={'lastname': payload['lastname']})
-        remaining_ids = booking_ids(response)
+        try:
+            response = api.get_bookings(params={'lastname': payload['lastname']})
+            remaining_ids = booking_ids(response)
+        except Exception as error:
+            raise CleanupError(f'Deleted-ID discovery failed: {error}') from error
         errors = []
         for owned_id in remaining_ids:
             try:
@@ -258,4 +264,5 @@ def deleted_booking(api: ApiClient, basic_auth: tuple[str, str]) -> Iterator[Boo
                     errors.append(f'ID {owned_id}: HTTP {response.status_code}')
             except Exception as error:
                 errors.append(f'ID {owned_id}: {error}')
-        assert not errors, 'Deleted-ID cleanup failed: ' + '; '.join(errors)
+        if errors:
+            raise CleanupError('Deleted-ID cleanup failed: ' + '; '.join(errors))

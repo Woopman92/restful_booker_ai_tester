@@ -8,7 +8,8 @@ from checkers.common import check_booking
 from checkers.common import check_form_update_response
 from checkers.common import check_status_code
 from checkers.common import check_xml_booking
-from checkers.update_booking import UpdateValuesMismatch
+from checkers.errors import FormResponseMismatch
+from checkers.errors import ResponseValuesMismatch
 from checkers.update_booking import check_update_booking_response
 from checkers.update_booking import check_update_response_schema
 from checkers.update_booking import check_update_values
@@ -97,7 +98,7 @@ class TestUpdateBookingValues:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=ResponseValuesMismatch,
                 reason='UpdateBooking documents totalprice as Number without an integer restriction; '
                 'PUT totalprice=123.5 currently returns 123, and subsequent GET also returns 123.',
             )
@@ -181,7 +182,7 @@ class TestUpdateBookingFormats:
             pytest.param({'depositpaid': True},
                          marks=pytest.mark.xfail(
                              strict=True,
-                             raises=UpdateValuesMismatch,
+                             raises=ResponseValuesMismatch,
                              reason=(
                                  'UpdateBooking documents Boolean depositpaid and XML input; '
                                  'XML depositpaid=false currently becomes true.'
@@ -218,7 +219,7 @@ class TestUpdateBookingFormats:
             pytest.param({'depositpaid': True},
                          marks=pytest.mark.xfail(
                              strict=True,
-                             raises=UpdateValuesMismatch,
+                             raises=ResponseValuesMismatch,
                              reason=(
                                  'UpdateBooking documents Boolean depositpaid and form input; '
                                  'form depositpaid=false currently becomes true.'
@@ -264,7 +265,7 @@ class TestUpdateBookingFormats:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=FormResponseMismatch,
                 reason='UpdateBooking documents a URL-encoded response example; the current body is '
                 '"formurlencoded is not a function" with HTTP 200 text/html, although the update is persisted.',
             )

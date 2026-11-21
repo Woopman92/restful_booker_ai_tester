@@ -30,6 +30,7 @@ recorded separately without `xfail` and marked `current_behavior`. Load testing 
 │   └── <endpoint>/            # Endpoint-specific positive and negative test modules
 ├── checkers/                  # Reusable response and persisted-state checks
 │   ├── common.py              # Checks shared across endpoint test groups
+│   ├── errors.py              # Response mismatch and cleanup exception types
 │   ├── get_bookings.py        # GetBookings-specific checks
 │   └── create_token.py        # CreateToken-specific checks
 ├── helpers/
@@ -90,6 +91,11 @@ Python or Poetry to be installed on the host.
 - Mark confirmed documentation mismatches with a descriptive `xfail`. For
   unspecified behavior, use a separate current-behavior test with an explanatory
   English comment and no `xfail`.
+- Keep status, parsing and structural checks outside expected value failures.
+  Use dedicated mismatch exceptions with strict `xfail`; whole-response value
+  comparisons are sufficient without field-specific defect recognition. Confirmed
+  form serialization errors use a separate exception. Report cleanup failures as
+  `CleanupError`, independently of expected test failures.
 - Remove unused helpers, fixtures and imports when deleting tests. Run formatting
   and lint checks before committing; use Conventional Commits messages.
 

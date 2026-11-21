@@ -1,13 +1,14 @@
 """Schema, persistence and current response checks for booking creation."""
 
 from typing import Any
-from urllib.parse import parse_qs
 from xml.etree import ElementTree
 
 from requests import Response
 
+from checkers.common import _check_booking_values
 from checkers.common import check_booking_schema
 from checkers.common import check_xml_booking_data
+from checkers.common import form_response_fields
 
 
 def check_creation_schema(response: Response) -> int:
@@ -58,13 +59,10 @@ def check_created_values(response: Response, expected_payload: dict[str, Any]) -
         expected_payload: Expected persisted booking fields.
 
     Raises:
-        AssertionError: Booking fields or their JSON types differ.
+        ResponseValuesMismatch: Booking fields or their JSON types differ.
         ValueError: The response is not valid JSON.
     """
-    actual = response.json()['booking']
-    assert actual == expected_payload
-    for key, value in expected_payload.items():
-        assert type(actual[key]) is type(value), f'Unexpected type for {key}'
+    _check_booking_values(response.json()['booking'], expected_payload)
 
 
 def check_create_booking_response(response: Response, expected_payload: dict[str, Any]) -> int:
@@ -138,11 +136,10 @@ def check_form_created_booking(response: Response, expected_payload: dict[str, A
 
     Raises:
         AssertionError: The status, media type or encoded fields differ.
+        FormResponseMismatch: The service returns its confirmed serializer error.
         ValueError: The encoded body or ID is invalid.
     """
-    assert response.status_code == 200, response.text
-    assert '=' in response.text, response.text
-    fields = parse_qs(response.text, keep_blank_values=True, strict_parsing=True)
+    fields = form_response_fields(response)
     assert len(fields.get('bookingid', [])) == 1
     int(fields['bookingid'][0])
     for key in ('firstname', 'lastname', 'totalprice', 'additionalneeds'):

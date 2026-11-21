@@ -4,13 +4,10 @@ from typing import Any
 
 from requests import Response
 
+from checkers.common import _check_booking_values
 from checkers.common import check_booking_schema
 from checkers.common import check_status_code
 from tests.client import ApiClient
-
-
-class UpdateValuesMismatch(AssertionError):
-    """Identify a value mismatch separately from status and schema failures."""
 
 
 def check_update_response_schema(response: Response) -> None:
@@ -36,16 +33,10 @@ def check_update_values(response: Response, expected_payload: dict[str, Any]) ->
         expected_payload: Exact expected replacement fields.
 
     Raises:
-        UpdateValuesMismatch: Response fields or their JSON types differ.
+        ResponseValuesMismatch: Response fields or their JSON types differ.
         ValueError: The body is not valid JSON.
     """
-    actual = response.json()
-    try:
-        assert actual == expected_payload
-        for name, value in expected_payload.items():
-            assert type(actual[name]) is type(value), f'Unexpected type for {name}'
-    except AssertionError as error:
-        raise UpdateValuesMismatch(str(error)) from error
+    _check_booking_values(response.json(), expected_payload)
 
 
 def check_update_booking_response(response: Response, expected_payload: dict[str, Any]) -> None:

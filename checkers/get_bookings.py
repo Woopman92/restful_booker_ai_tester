@@ -3,6 +3,7 @@
 from requests import Response
 
 from checkers.common import booking_ids
+from checkers.errors import ResponseValuesMismatch
 
 
 def check_booking_presence(response: Response, booking_id: int, expected_present: bool = True) -> None:
@@ -14,8 +15,12 @@ def check_booking_presence(response: Response, booking_id: int, expected_present
         expected_present: Whether the booking should be present. Defaults to True.
 
     Raises:
-        AssertionError: Response validation fails or booking presence is unexpected.
+        AssertionError: Response status, media type or schema is invalid.
+        ResponseValuesMismatch: Booking presence is unexpected.
         ValueError: The response body is not valid JSON.
     """
     actual_ids = booking_ids(response)
-    assert (booking_id in actual_ids) == expected_present
+    try:
+        assert (booking_id in actual_ids) == expected_present
+    except AssertionError as error:
+        raise ResponseValuesMismatch(str(error)) from error

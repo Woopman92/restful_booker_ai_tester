@@ -4,13 +4,11 @@ from typing import Any
 
 from requests import Response
 
+from checkers.common import _check_booking_values
+from checkers.common import check_booking_field_types
 from checkers.common import check_booking_schema
 from checkers.common import check_status_code
 from tests.client import ApiClient
-
-
-class PartialUpdateMismatch(AssertionError):
-    """Identify contract value mismatches separately from transport or schema errors."""
 
 
 def check_partial_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
@@ -21,10 +19,14 @@ def check_partial_update_response(response: Response, expected_payload: dict[str
         expected_payload: Full expected booking state.
 
     Raises:
-        PartialUpdateMismatch: A booking value or its type differs.
+        ResponseValuesMismatch: A booking value or its type differs.
         AssertionError: Status, media type or schema is invalid.
         ValueError: JSON or a calendar date cannot be parsed.
     """
+    check_status_code(response, 200)
+    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
+    check_booking_field_types(response.json())
+    # Known malformed calendar values are compared as data, after structural validation.
     check_current_partial_update_response(response, expected_payload)
     check_booking_schema(response.json())
 
@@ -37,7 +39,7 @@ def check_current_partial_update_response(response: Response, expected_payload: 
         expected_payload: Full observed state, possibly containing invalid values.
 
     Raises:
-        PartialUpdateMismatch: Fields or their types differ from the expected state.
+        ResponseValuesMismatch: Fields or their types differ from the expected state.
         AssertionError: Status, media type or object structure is invalid.
         ValueError: The response is not JSON.
     """
@@ -45,12 +47,7 @@ def check_current_partial_update_response(response: Response, expected_payload: 
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     actual = response.json()
     assert isinstance(actual, dict)
-    try:
-        assert actual == expected_payload
-        for name, value in expected_payload.items():
-            assert type(actual[name]) is type(value), f'Unexpected type for {name}'
-    except AssertionError as error:
-        raise PartialUpdateMismatch(str(error)) from error
+    _check_booking_values(actual, expected_payload)
 
 
 def check_patched_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:

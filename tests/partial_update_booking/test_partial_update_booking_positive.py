@@ -7,7 +7,8 @@ import pytest
 from checkers.common import check_form_update_response
 from checkers.common import check_status_code
 from checkers.common import check_xml_booking
-from checkers.partial_update_booking import PartialUpdateMismatch
+from checkers.errors import FormResponseMismatch
+from checkers.errors import ResponseValuesMismatch
 from checkers.partial_update_booking import check_partial_update_response
 from checkers.partial_update_booking import check_patched_booking
 from helpers.models import Booking
@@ -60,7 +61,7 @@ class TestPartialUpdateBookingContract:
 
     @pytest.mark.xfail(
         strict=True,
-        raises=PartialUpdateMismatch,
+        raises=ResponseValuesMismatch,
         reason='PartialUpdateBooking documents both nested dates as optional; updating one date '
         'currently replaces the omitted date with 0NaN-aN-aN instead of preserving it.',
     )
@@ -122,7 +123,7 @@ class TestPartialUpdateBookingFields:
 
     @pytest.mark.xfail(
         strict=True,
-        raises=PartialUpdateMismatch,
+        raises=ResponseValuesMismatch,
         reason='PartialUpdateBooking documents totalprice as Number; PATCH totalprice=123.5 '
         'currently returns and persists 123, losing the fractional part.',
     )
@@ -202,7 +203,7 @@ class TestPartialUpdateBookingFormats:
             pytest.param({'depositpaid': True},
                          marks=pytest.mark.xfail(
                              strict=True,
-                             raises=PartialUpdateMismatch,
+                             raises=ResponseValuesMismatch,
                              reason='PartialUpdateBooking documents Boolean depositpaid and xml input; '
                              'xml depositpaid=false currently becomes true.',
                          )),
@@ -226,7 +227,7 @@ class TestPartialUpdateBookingFormats:
             pytest.param({'depositpaid': True},
                          marks=pytest.mark.xfail(
                              strict=True,
-                             raises=PartialUpdateMismatch,
+                             raises=ResponseValuesMismatch,
                              reason='PartialUpdateBooking documents Boolean depositpaid and form input; '
                              'form depositpaid=false currently becomes true.',
                          )),
@@ -268,7 +269,7 @@ class TestPartialUpdateBookingFormats:
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
-                raises=AssertionError,
+                raises=FormResponseMismatch,
                 reason='PartialUpdateBooking shows a URL-encoded response; the service instead returns '
                 'HTTP 200 text/html "formurlencoded is not a function", although the patch is persisted.',
             )
