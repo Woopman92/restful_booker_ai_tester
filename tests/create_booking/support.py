@@ -9,9 +9,8 @@ from xml.etree import ElementTree
 from requests import Response
 
 from checkers.common import booking_ids
+from checkers.common import cleanup_bookings
 from checkers.errors import CleanupError
-from constants import BOOKER_PASSWORD
-from constants import BOOKER_USERNAME
 from constants import CREATE_BOOKING_PATH
 from tests.client import ApiClient
 
@@ -76,14 +75,11 @@ class CreationTracker:
                 self.owned_ids.update(found)
             except Exception as error:
                 errors.append(f'Owned ID discovery failed: {error}')
-        for booking_id in sorted(self.owned_ids):
-            try:
-                response = self.api.delete_booking(booking_id, auth=(BOOKER_USERNAME, BOOKER_PASSWORD))
-                if response.status_code != 201:
-                    errors.append(f'ID {booking_id}: HTTP {response.status_code}')
-            except Exception as error:
-                errors.append(f'ID {booking_id}: {error}')
+        try:
+            cleanup_bookings(self.api, sorted(self.owned_ids))
+        except CleanupError as error:
+            errors.append(str(error))
         if len(self.recovered_ids) != self.expected_recovered_count:
             errors.append(f'Unexpected records hidden by a creation response: {sorted(self.recovered_ids)}')
         if errors:
-            raise CleanupError('Cleanup failed: ' + '; '.join(errors))
+            raise CleanupError('; '.join(errors))

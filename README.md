@@ -96,6 +96,9 @@ Python or Poetry to be installed on the host.
   comparisons are sufficient without field-specific defect recognition. Confirmed
   form serialization errors use a separate exception. Report cleanup failures as
   `CleanupError`, independently of expected test failures.
+- Reuse `cleanup_bookings` for teardown: DELETE 201 succeeds; DELETE 405 requires
+  a confirming GET 404 regardless of its body or media type. Attempt the remaining
+  registered IDs before reporting cleanup failures.
 - Remove unused helpers, fixtures and imports when deleting tests. Run formatting
   and lint checks before committing; use Conventional Commits messages.
 
