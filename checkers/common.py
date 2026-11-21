@@ -1,5 +1,6 @@
 """Checks shared across endpoint test groups, including booking schemas and persisted state."""
 
+from collections.abc import Iterable
 from datetime import date
 from http import HTTPStatus
 from typing import Any
@@ -8,9 +9,38 @@ from xml.etree import ElementTree
 
 from requests import Response
 
+from checkers.errors import CleanupError
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
+from constants import BOOKER_PASSWORD
+from constants import BOOKER_USERNAME
 from tests.client import ApiClient
+
+
+def cleanup_bookings(api: ApiClient, owned_ids: Iterable[int]) -> None:
+    """Delete registered bookings and confirm absence when DELETE returns 405.
+
+    Args:
+        api: Client used for cleanup with the configured valid credentials.
+        owned_ids: Registered IDs to delete, preserving order and ignoring duplicates.
+
+    Raises:
+        CleanupError: A deletion, absence check, or request fails. Every remaining
+            registered ID is attempted before the collected failures are reported.
+    """
+    errors = []
+    for booking_id in dict.fromkeys(owned_ids):
+        try:
+            response = api.delete_booking(booking_id, auth=(BOOKER_USERNAME, BOOKER_PASSWORD))
+            if response.status_code == 405:
+                response = api.get_booking(booking_id)
+                check_status_code(response, 404)
+            else:
+                check_status_code(response, 201)
+        except Exception as error:
+            errors.append(f'ID {booking_id}: {type(error).__name__}: {error}')
+    if errors:
+        raise CleanupError('Cleanup failed: ' + '; '.join(errors))
 
 
 def check_plain_text_error(response: Response, expected_status_code: int) -> None:
@@ -39,7 +69,9 @@ def check_status_code(response: Response, expected_status_code: int) -> None:
     Raises:
         AssertionError: The status differs from the expected value.
     """
-    assert response.status_code == expected_status_code
+    assert response.status_code == expected_status_code, (
+        f'Expected HTTP {expected_status_code}, received HTTP {response.status_code}'
+    )
 
 
 def booking_ids(response: Response) -> set[int]:

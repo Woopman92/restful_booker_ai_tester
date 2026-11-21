@@ -14,8 +14,8 @@ import pytest
 import requests
 
 from checkers.common import booking_ids
+from checkers.common import cleanup_bookings
 from checkers.create_token import check_created_token
-from checkers.delete_booking import check_deleted_booking
 from checkers.errors import CleanupError
 from constants import BASE_URL
 from constants import BOOKER_PASSWORD
@@ -144,21 +144,7 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
 
     yield create
 
-    errors = []
-    for booking_id in reversed(owned_ids):
-        try:
-            response = api.delete_booking(
-                booking_id,
-                auth=(BOOKER_USERNAME, BOOKER_PASSWORD),
-            )
-            if response.status_code == 405:
-                check_deleted_booking(api, booking_id)
-            elif response.status_code != 201:
-                errors.append(f'ID {booking_id}: HTTP {response.status_code}')
-        except (AssertionError, requests.RequestException) as error:
-            errors.append(f'ID {booking_id}: {error}')
-    if errors:
-        raise CleanupError('Cleanup failed: ' + '; '.join(errors))
+    cleanup_bookings(api, reversed(owned_ids))
 
 
 @pytest.fixture
@@ -256,13 +242,4 @@ def deleted_booking(api: ApiClient, basic_auth: tuple[str, str]) -> Iterator[Boo
             remaining_ids = booking_ids(response)
         except Exception as error:
             raise CleanupError(f'Deleted-ID discovery failed: {error}') from error
-        errors = []
-        for owned_id in remaining_ids:
-            try:
-                response = api.delete_booking(owned_id, auth=basic_auth)
-                if response.status_code != 201:
-                    errors.append(f'ID {owned_id}: HTTP {response.status_code}')
-            except Exception as error:
-                errors.append(f'ID {owned_id}: {error}')
-        if errors:
-            raise CleanupError('Deleted-ID cleanup failed: ' + '; '.join(errors))
+        cleanup_bookings(api, remaining_ids)
