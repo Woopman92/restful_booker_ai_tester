@@ -6,7 +6,6 @@ from urllib.parse import quote
 
 import requests
 
-from checkers.common import check_status_code
 from constants import CREATE_BOOKING_PATH
 from constants import CREATE_TOKEN_PATH
 from constants import DELETE_BOOKING_PATH
@@ -26,6 +25,22 @@ class ApiClient:
     base_url: str
     timeout: float
 
+    @staticmethod
+    def _check_status_code(response: requests.Response, expected_status_code: int | tuple[int, ...]) -> None:
+        """Check an HTTP status independently of representation-specific assertions.
+
+        Args:
+            response: Service response to validate.
+            expected_status_code: Required status or tuple of acceptable statuses.
+
+        Raises:
+            AssertionError: The status differs from the expected value.
+        """
+        allowed = (expected_status_code, ) if isinstance(expected_status_code, int) else expected_status_code
+        assert response.status_code in allowed, (
+            f'Expected HTTP {expected_status_code}, received HTTP {response.status_code}'
+        )
+
     def ping(self, *, expected_status_code: int = 201) -> requests.Response:
         """Check service availability with a dedicated short timeout.
 
@@ -40,7 +55,7 @@ class ApiClient:
             requests.RequestException: The health-check request fails, including timeouts.
         """
         response = self.session.get(f'{self.base_url}{PING_PATH}', timeout=PING_TIMEOUT)
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def create_token(
@@ -76,7 +91,7 @@ class ApiClient:
             headers={'Content-Type': content_type},
             timeout=self.timeout,
         )
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def update_booking(
@@ -129,7 +144,7 @@ class ApiClient:
             auth=auth,
             timeout=self.timeout,
         )
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def partial_update_booking(
@@ -182,7 +197,7 @@ class ApiClient:
             auth=auth,
             timeout=self.timeout,
         )
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def get_bookings(
@@ -206,7 +221,7 @@ class ApiClient:
             requests.RequestException: The request fails, including timeouts.
         """
         response = self.session.get(f'{self.base_url}{GET_BOOKINGS_PATH}', params=params, timeout=self.timeout)
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def get_booking(
@@ -232,7 +247,7 @@ class ApiClient:
         """
         path = GET_BOOKING_PATH.format(booking_id=quote(str(booking_id), safe=''))
         response = self.session.get(f'{self.base_url}{path}', headers={'Accept': accept}, timeout=self.timeout)
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def create_booking(
@@ -270,7 +285,7 @@ class ApiClient:
             headers={'Content-Type': content_type, 'Accept': accept},
             timeout=self.timeout,
         )
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response
 
     def delete_booking(
@@ -306,5 +321,5 @@ class ApiClient:
         if token is not None:
             headers['Cookie'] = f'token={token}'
         response = self.session.delete(f'{self.base_url}{path}', headers=headers, auth=auth, timeout=self.timeout)
-        check_status_code(response, expected_status_code)
+        self._check_status_code(response, expected_status_code)
         return response

@@ -1,12 +1,9 @@
 """Checks shared across endpoint test groups, including booking schemas and persisted state."""
 
-from __future__ import annotations
-
 from collections.abc import Iterable
 from datetime import date
 from http import HTTPStatus
 from math import isfinite
-from typing import TYPE_CHECKING
 from typing import Any
 from urllib.parse import parse_qs
 from xml.etree import ElementTree
@@ -18,9 +15,7 @@ from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
-
-if TYPE_CHECKING:
-    from tests.client import ApiClient
+from tests.client import ApiClient
 
 
 def cleanup_bookings(api: ApiClient, owned_ids: Iterable[int]) -> None:
@@ -60,22 +55,6 @@ def check_plain_text_error(response: Response) -> None:
     """
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/plain'
     assert response.text == HTTPStatus(response.status_code).phrase
-
-
-def check_status_code(response: Response, expected_status_code: int | tuple[int, ...]) -> None:
-    """Check an HTTP status independently of representation-specific assertions.
-
-    Args:
-        response: Service response to validate.
-        expected_status_code: Required status or tuple of acceptable statuses.
-
-    Raises:
-        AssertionError: The status differs from the expected value.
-    """
-    allowed = (expected_status_code, ) if isinstance(expected_status_code, int) else expected_status_code
-    assert response.status_code in allowed, (
-        f'Expected HTTP {expected_status_code}, received HTTP {response.status_code}'
-    )
 
 
 def check_number(value: Any) -> None:
