@@ -27,6 +27,11 @@
 13. Treat GET requests to Restful Booker as operations that do not modify data; do not add separate checks that reading leaves records unchanged.
 14. Use the shared cleanup_bookings function in checkers/common.py for test-data cleanup. DELETE 201 indicates successful cleanup; on DELETE 405, confirm absence with a subsequent GET expecting HTTP 404, without imposing a response body or media type on that confirmation. Attempt cleanup of the remaining registered IDs after a failure and report all detected failures with CleanupError.
 
+## Git Workflow
+
+1. Before making changes for a new task, switch to the local main branch and update it from the remote repository with git pull --ff-only origin main.
+2. Create a new task-specific branch from the updated main before editing files. Do not implement a new task directly on main or reuse a previous task's branch. Creating commits still requires the user's separate approval.
+
 ## Test Implementation Requirements
 
 1. Use Poetry to manage project dependencies.

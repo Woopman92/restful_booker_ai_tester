@@ -68,9 +68,9 @@ class TestBookingValues:
         response = api.create_booking(booking_payload)
         check_create_booking_response(response, booking_payload)
 
-    @pytest.mark.parametrize('value', [-1, 0, 1], ids=['negative', 'zero', 'positive'])
-    def test_integer_price(self, api: ApiClient, booking_payload: dict[str, Any], value: int) -> None:
-        """Preserve numbers around zero without inventing a nonnegative price constraint."""
+    @pytest.mark.parametrize('value', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
+    def test_integer_price(self, api: ApiClient, booking_payload: dict[str, Any], value: int | float) -> None:
+        """Preserve integral JSON Numbers, including floating-point representations."""
         booking_payload['totalprice'] = value
         response = api.create_booking(booking_payload)
         check_create_booking_response(response, booking_payload)
