@@ -68,16 +68,16 @@ class TestUpdateBookingValues:
         check_update_booking_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
-    @pytest.mark.parametrize('price', [-1, 0, 1], ids=['negative', 'zero', 'positive'])
+    @pytest.mark.parametrize('price', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
     def test_integer_price(
         self,
         api: ApiClient,
         booking: Booking,
         replacement_payload: dict[str, Any],
         basic_auth: tuple[str, str],
-        price: int
+        price: int | float
     ) -> None:
-        """Persist numeric values around zero without assuming a nonnegative price requirement."""
+        """Persist integral JSON Numbers, including floating-point representations."""
         replacement_payload['totalprice'] = price
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
         check_update_booking_response(response, replacement_payload)

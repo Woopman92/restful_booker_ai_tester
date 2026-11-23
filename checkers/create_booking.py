@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 from requests import Response
 
 from checkers.common import _check_booking_values
+from checkers.common import _check_current_booking_values
 from checkers.common import check_booking_schema
 from checkers.common import check_xml_booking_data
 from checkers.common import form_response_fields
@@ -24,13 +25,13 @@ def check_creation_schema(response: Response) -> int:
         AssertionError: Status, media type, envelope or booking schema is invalid.
         ValueError: JSON or a calendar date cannot be parsed.
     """
-    booking_id = check_current_creation_envelope(response)
+    booking_id = check_json_creation_envelope(response)
     check_booking_schema(response.json()['booking'])
     return booking_id
 
 
-def check_current_creation_envelope(response: Response) -> int:
-    """Check the observed success envelope without imposing a schema on invalid input.
+def check_json_creation_envelope(response: Response) -> int:
+    """Validate the status, media type and top-level fields of a JSON creation response.
 
     Args:
         response: JSON creation response.
@@ -46,20 +47,21 @@ def check_current_creation_envelope(response: Response) -> int:
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     body = response.json()
     assert isinstance(body, dict)
-    assert type(body.get('bookingid')) is int
+    assert type(body.get('bookingid')) is int, f'Expected an integer bookingid, got {body!r}'
     assert isinstance(body.get('booking'), dict)
     return body['bookingid']
 
 
 def check_created_values(response: Response, expected_payload: dict[str, Any]) -> None:
-    """Compare the nested created booking with expected values and exact field types.
+    """Compare the nested booking using JSON types and numeric value equality.
 
     Args:
         response: Response whose creation envelope has already been validated.
         expected_payload: Expected persisted booking fields.
 
     Raises:
-        ResponseValuesMismatch: Booking fields or their JSON types differ.
+        AssertionError: Required booking fields or JSON types are invalid.
+        ResponseValuesMismatch: Booking field values differ.
         ValueError: The response is not valid JSON.
     """
     _check_booking_values(response.json()['booking'], expected_payload)
@@ -95,8 +97,8 @@ def check_current_created_booking(response: Response, expected_payload: dict[str
         AssertionError: Current status, envelope, values or field types differ.
         ValueError: The body is not valid JSON.
     """
-    check_current_creation_envelope(response)
-    check_created_values(response, expected_payload)
+    check_json_creation_envelope(response)
+    _check_current_booking_values(response.json()['booking'], expected_payload)
 
 
 def check_xml_created_booking(response: Response, expected_payload: dict[str, Any]) -> int:

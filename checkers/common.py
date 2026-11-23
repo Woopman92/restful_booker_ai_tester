@@ -3,6 +3,7 @@
 from collections.abc import Iterable
 from datetime import date
 from http import HTTPStatus
+from math import isfinite
 from typing import Any
 from urllib.parse import parse_qs
 from xml.etree import ElementTree
@@ -72,6 +73,19 @@ def check_status_code(response: Response, expected_status_code: int) -> None:
     assert response.status_code == expected_status_code, (
         f'Expected HTTP {expected_status_code}, received HTTP {response.status_code}'
     )
+
+
+def check_number(value: Any) -> None:
+    """Check a JSON Number without treating Boolean as numeric.
+
+    Args:
+        value: Decoded JSON field to validate.
+
+    Raises:
+        AssertionError: The value is not int or float, or is a nonfinite float.
+    """
+    assert type(value) in (int, float), f'Expected a JSON Number, got {value!r}'
+    assert type(value) is int or isfinite(value), f'Expected a finite JSON Number, got {value!r}'
 
 
 def booking_ids(response: Response) -> set[int]:
@@ -183,7 +197,7 @@ def check_booking_field_types(body: Any) -> None:
     assert isinstance(body, dict)
     for field in ('firstname', 'lastname', 'additionalneeds'):
         assert isinstance(body.get(field), str), f'Expected string field {field}'
-    assert type(body.get('totalprice')) in (int, float)
+    check_number(body.get('totalprice'))
     assert type(body.get('depositpaid')) is bool
     assert isinstance(body.get('bookingdates'), dict)
     for field in ('checkin', 'checkout'):
@@ -192,6 +206,24 @@ def check_booking_field_types(body: Any) -> None:
 
 
 def _check_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
+    """Compare contract values using JSON Number semantics after structural checks.
+
+    Args:
+        actual: Decoded complete booking data.
+        expected: Expected booking values, allowing numerically equal int and float.
+
+    Raises:
+        AssertionError: Required fields or JSON types are invalid.
+        ResponseValuesMismatch: Booking values differ.
+    """
+    check_booking_field_types(actual)
+    try:
+        assert actual == expected
+    except AssertionError as error:
+        raise ResponseValuesMismatch(str(error)) from error
+
+
+def _check_current_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
     """Compare booking data and top-level value types after response validation.
 
     Args:

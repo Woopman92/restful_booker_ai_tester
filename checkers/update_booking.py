@@ -5,6 +5,7 @@ from typing import Any
 from requests import Response
 
 from checkers.common import _check_booking_values
+from checkers.common import _check_current_booking_values
 from checkers.common import check_booking_schema
 from checkers.common import check_status_code
 from tests.client import ApiClient
@@ -33,7 +34,8 @@ def check_update_values(response: Response, expected_payload: dict[str, Any]) ->
         expected_payload: Exact expected replacement fields.
 
     Raises:
-        ResponseValuesMismatch: Response fields or their JSON types differ.
+        AssertionError: Required booking fields or JSON types are invalid.
+        ResponseValuesMismatch: Response field values differ.
         ValueError: The body is not valid JSON.
     """
     _check_booking_values(response.json(), expected_payload)
@@ -68,7 +70,7 @@ def check_current_update_response(response: Response, expected_payload: dict[str
     check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     assert isinstance(response.json(), dict)
-    check_update_values(response, expected_payload)
+    _check_current_booking_values(response.json(), expected_payload)
 
 
 def check_current_saved_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:

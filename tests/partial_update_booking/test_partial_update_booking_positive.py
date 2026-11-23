@@ -112,9 +112,11 @@ class TestPartialUpdateBookingFields:
         check_partial_update_response(response, expected)
         check_patched_booking(api, booking.booking_id, expected)
 
-    @pytest.mark.parametrize('price', [-1, 0, 1], ids=['negative', 'zero', 'positive'])
-    def test_integer_price(self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str], price: int) -> None:
-        """Preserve integer values around zero without assuming an undocumented minimum."""
+    @pytest.mark.parametrize('price', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
+    def test_integer_price(
+        self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str], price: int | float
+    ) -> None:
+        """Preserve integral JSON Numbers, including floating-point representations."""
         payload = {'totalprice': price}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)

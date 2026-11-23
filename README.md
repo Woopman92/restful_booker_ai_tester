@@ -88,6 +88,12 @@ Python or Poetry to be installed on the host.
   `helpers/models.py`. Keep API client methods in `tests/client.py`.
 - Use plain `assert` statements and register assertion rewriting before importing
   checker modules. Keep response parsing inside checkers.
+- Compare JSON `totalprice` values numerically. Accept finite integers and floats
+  and exclude booleans. Preserve exact type checks in current-behavior scenarios
+  that observe coercion.
+- The project expects each JSON `bookingid` returned by the service to decode as
+  a Python `int`. This is stricter than the documented `Number` type. Use the
+  returned ID directly when addressing a booking.
 - Mark confirmed documentation mismatches with a descriptive `xfail`. For
   unspecified behavior, use a separate current-behavior test with an explanatory
   English comment and no `xfail`.
@@ -101,6 +107,9 @@ Python or Poetry to be installed on the host.
   registered IDs before reporting cleanup failures.
 - Remove unused helpers, fixtures and imports when deleting tests. Run formatting
   and lint checks before committing; use Conventional Commits messages.
+
+Before changing files for a new task, switch to `main`, update it with
+`git pull --ff-only origin main`, and create a new branch from that updated main.
 
 ## 5. Docker Run
 
