@@ -83,6 +83,10 @@ Python or Poetry to be installed on the host.
   request on its own line and store its result in `response`. Use separate tests
   when parameter cases require different expectations instead of adding `if`
   branches to the test body.
+- Each endpoint method checks the HTTP status before returning the response.
+  Ping and DeleteBooking expect 201 by default. The other endpoints expect 200.
+  Pass another expected status by keyword, for example
+  `api.get_booking(booking_id, expected_status_code=404)`.
 - Reuse existing functions before introducing new ones. Place reusable checks in
   `checkers`, data transformations in `helpers`, and shared dataclasses in
   `helpers/models.py`. Keep API client methods in `tests/client.py`.

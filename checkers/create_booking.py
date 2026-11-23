@@ -22,7 +22,7 @@ def check_creation_schema(response: Response) -> int:
         int: Created booking ID for a subsequent persistence check.
 
     Raises:
-        AssertionError: Status, media type, envelope or booking schema is invalid.
+        AssertionError: Media type, envelope or booking schema is invalid.
         ValueError: JSON or a calendar date cannot be parsed.
     """
     booking_id = check_json_creation_envelope(response)
@@ -31,7 +31,7 @@ def check_creation_schema(response: Response) -> int:
 
 
 def check_json_creation_envelope(response: Response) -> int:
-    """Validate the status, media type and top-level fields of a JSON creation response.
+    """Validate the media type and top-level fields of a JSON creation response.
 
     Args:
         response: JSON creation response.
@@ -40,10 +40,9 @@ def check_json_creation_envelope(response: Response) -> int:
         int: Created record ID.
 
     Raises:
-        AssertionError: Status, JSON media type or envelope is invalid.
+        AssertionError: JSON media type or envelope is invalid.
         ValueError: The body is not valid JSON.
     """
-    assert response.status_code == 200, response.text
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     body = response.json()
     assert isinstance(body, dict)
@@ -94,7 +93,7 @@ def check_current_created_booking(response: Response, expected_payload: dict[str
         expected_payload: Observed booking fields, which may violate the valid-input schema.
 
     Raises:
-        AssertionError: Current status, envelope, values or field types differ.
+        AssertionError: Envelope, values or field types differ.
         ValueError: The body is not valid JSON.
     """
     check_json_creation_envelope(response)
@@ -112,11 +111,10 @@ def check_xml_created_booking(response: Response, expected_payload: dict[str, An
         int: ID from the XML envelope.
 
     Raises:
-        AssertionError: Status, observed media type, envelope or booking values differ.
+        AssertionError: Observed media type, envelope or booking values differ.
         ValueError: The ID cannot be parsed as an integer.
         xml.etree.ElementTree.ParseError: The XML is malformed.
     """
-    assert response.status_code == 200, response.text
     # The response media type is not explicitly documented; record its current value.
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/html'
     root = ElementTree.fromstring(response.text)
@@ -137,7 +135,7 @@ def check_form_created_booking(response: Response, expected_payload: dict[str, A
         expected_payload: Expected booking fields.
 
     Raises:
-        AssertionError: The status, media type or encoded fields differ.
+        AssertionError: The media type or encoded fields differ.
         FormResponseMismatch: The service returns its confirmed serializer error.
         ValueError: The encoded body or ID is invalid.
     """

@@ -7,7 +7,6 @@ from requests import Response
 from checkers.common import _check_booking_values
 from checkers.common import _check_current_booking_values
 from checkers.common import check_booking_schema
-from checkers.common import check_status_code
 from tests.client import ApiClient
 
 
@@ -20,10 +19,9 @@ def check_partial_update_response(response: Response, expected_payload: dict[str
 
     Raises:
         ResponseValuesMismatch: A booking value or its type differs.
-        AssertionError: Status, media type or schema is invalid.
+        AssertionError: Media type or schema is invalid.
         ValueError: JSON or a calendar date cannot be parsed.
     """
-    check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     # Known malformed calendar values are compared as data, after structural validation.
     _check_booking_values(response.json(), expected_payload)
@@ -39,10 +37,9 @@ def check_current_partial_update_response(response: Response, expected_payload: 
 
     Raises:
         ResponseValuesMismatch: Fields or their types differ from the expected state.
-        AssertionError: Status, media type or object structure is invalid.
+        AssertionError: Media type or object structure is invalid.
         ValueError: The response is not JSON.
     """
-    check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     actual = response.json()
     assert isinstance(actual, dict)
@@ -58,7 +55,7 @@ def check_patched_booking(api: ApiClient, booking_id: int, expected_payload: dic
         expected_payload: Full expected booking state after PATCH.
 
     Raises:
-        AssertionError: Status, schema or persisted values differ.
+        AssertionError: Schema or persisted values differ.
         ValueError: JSON or a calendar date cannot be parsed.
         requests.RequestException: Retrieval fails.
     """
@@ -91,9 +88,8 @@ def check_serialization_error(response: Response, expected_message: str) -> None
         expected_message: Observed serialization error text.
 
     Raises:
-        AssertionError: Status, media type or error message differs.
+        AssertionError: Media type or error message differs.
     """
-    check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/html'
     assert response.text == expected_message
 

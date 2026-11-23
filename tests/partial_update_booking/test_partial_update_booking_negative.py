@@ -27,8 +27,8 @@ class TestPartialUpdateBookingInvalidAuth:
         """Record rejection of a partial update without authentication."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged data.
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
-        response = api.partial_update_booking(booking.booking_id, payload)
-        check_plain_text_error(response, 403)
+        response = api.partial_update_booking(booking.booking_id, payload, expected_status_code=403)
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('token', ['', 'invalid'], ids=['empty-token', 'unknown-token'])
@@ -36,8 +36,8 @@ class TestPartialUpdateBookingInvalidAuth:
         """Record rejection of empty and unknown Cookie tokens."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged data.
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
-        response = api.partial_update_booking(booking.booking_id, payload, token=token)
-        check_plain_text_error(response, 403)
+        response = api.partial_update_booking(booking.booking_id, payload, token=token, expected_status_code=403)
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['username', 'password'])
@@ -50,8 +50,8 @@ class TestPartialUpdateBookingInvalidAuth:
         credentials[field] += 'Invalid'
         auth = credentials['username'], credentials['password']
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
-        response = api.partial_update_booking(booking.booking_id, payload, auth=auth)
-        check_plain_text_error(response, 403)
+        response = api.partial_update_booking(booking.booking_id, payload, auth=auth, expected_status_code=403)
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('authorization', ['Bearer invalid', 'Basic !!!'], ids=['wrong-scheme', 'malformed-basic'])
@@ -59,8 +59,10 @@ class TestPartialUpdateBookingInvalidAuth:
         """Record rejection of unsupported and malformed Authorization headers."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged data.
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
-        response = api.partial_update_booking(booking.booking_id, payload, authorization=authorization)
-        check_plain_text_error(response, 403)
+        response = api.partial_update_booking(
+            booking.booking_id, payload, authorization=authorization, expected_status_code=403
+        )
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, booking.payload)
 
 
@@ -237,8 +239,10 @@ class TestPartialUpdateBookingInvalidPayload:
     ) -> None:
         """Record parser rejection before the original booking changes."""
         # Expected error handling is unspecified; record current HTTP 400 with unchanged data.
-        response = api.partial_update_booking(booking.booking_id, body=body, content_type=content_type, auth=basic_auth)
-        check_plain_text_error(response, 400)
+        response = api.partial_update_booking(
+            booking.booking_id, body=body, content_type=content_type, auth=basic_auth, expected_status_code=400
+        )
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('content_type', ['text/plain', None], ids=['unsupported', 'absent'])
@@ -260,8 +264,10 @@ class TestPartialUpdateBookingInvalidPayload:
         # Expected header handling is unspecified; record current HTTP 500 despite the persisted change.
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
         expected = merge_booking_patch(booking.payload, payload)
-        response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth, accept=accept)
-        check_plain_text_error(response, 500)
+        response = api.partial_update_booking(
+            booking.booking_id, payload, auth=basic_auth, accept=accept, expected_status_code=500
+        )
+        check_plain_text_error(response)
         check_patched_booking(api, booking.booking_id, expected)
 
 
@@ -273,7 +279,9 @@ class TestPartialUpdateBookingMissingId:
         # Expected missing-ID handling is unspecified; record HTTP 405 without resurrecting the owned record.
         payload = deepcopy(deleted_booking.payload)
         payload['firstname'] += 'Changed'
-        response = api.partial_update_booking(deleted_booking.booking_id, payload, auth=basic_auth)
-        check_plain_text_error(response, 405)
+        response = api.partial_update_booking(
+            deleted_booking.booking_id, payload, auth=basic_auth, expected_status_code=405
+        )
+        check_plain_text_error(response)
         response = api.get_bookings(params={'lastname': payload['lastname']})
         check_booking_ids(response, set())

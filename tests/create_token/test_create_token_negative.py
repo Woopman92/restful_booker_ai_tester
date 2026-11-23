@@ -79,8 +79,8 @@ class TestInvalidAuthPayload:
     def test_malformed_json(self, api: ApiClient) -> None:
         """Record the response to a truncated JSON object."""
         # The expected error response is unspecified; this test records current service behavior.
-        response = api.create_token(body='{"username":')
-        check_plain_text_error(response, expected_status_code=400)
+        response = api.create_token(body='{"username":', expected_status_code=400)
+        check_plain_text_error(response)
 
     def test_unsupported_content_type(self, api: ApiClient, credentials: dict[str, str]) -> None:
         """Record the response to valid credentials sent as plain text."""

@@ -15,8 +15,8 @@ class TestMissingBooking:
     def test_deleted_booking(self, api: ApiClient, deleted_booking: Booking) -> None:
         """Return the observed plain-text 404 without leaking another booking."""
         # The expected error result is unspecified; record current behavior: HTTP 404 with Not Found.
-        response = api.get_booking(deleted_booking.booking_id)
-        check_plain_text_error(response, expected_status_code=404)
+        response = api.get_booking(deleted_booking.booking_id, expected_status_code=404)
+        check_plain_text_error(response)
 
 
 class TestInvalidBookingId:
@@ -28,8 +28,8 @@ class TestInvalidBookingId:
     def test_invalid_id(self, api: ApiClient, booking: Booking, booking_id: str) -> None:
         """Record the response to an ID outside the tested valid ID class."""
         # ID constraints and error responses are unspecified; record current behavior: HTTP 404.
-        response = api.get_booking(booking_id)
-        check_plain_text_error(response, expected_status_code=404)
+        response = api.get_booking(booking_id, expected_status_code=404)
+        check_plain_text_error(response)
 
 
 class TestUnsupportedAccept:
@@ -38,5 +38,5 @@ class TestUnsupportedAccept:
     def test_unsupported_accept(self, api: ApiClient, booking: Booking) -> None:
         """Record the current response to an unsupported Accept media type."""
         # The expected error result is unspecified; record current behavior: HTTP 418 with a plain-text error.
-        response = api.get_booking(booking.booking_id, accept='application/pdf')
-        check_plain_text_error(response, expected_status_code=418)
+        response = api.get_booking(booking.booking_id, accept='application/pdf', expected_status_code=418)
+        check_plain_text_error(response)

@@ -18,16 +18,16 @@ class TestDeleteBookingInvalidAuth:
     def test_missing_auth(self, api: ApiClient, booking: Booking) -> None:
         """Record rejection when neither authentication mechanism is supplied."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged booking data.
-        response = api.delete_booking(booking.booking_id)
-        check_plain_text_error(response, 403)
+        response = api.delete_booking(booking.booking_id, expected_status_code=403)
+        check_plain_text_error(response)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('invalid_token', ['', 'invalid'], ids=['empty-token', 'unknown-token'])
     def test_invalid_token(self, api: ApiClient, booking: Booking, invalid_token: str) -> None:
         """Record rejection of empty and unknown Cookie tokens without Basic fallback."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged booking data.
-        response = api.delete_booking(booking.booking_id, token=invalid_token)
-        check_plain_text_error(response, 403)
+        response = api.delete_booking(booking.booking_id, token=invalid_token, expected_status_code=403)
+        check_plain_text_error(response)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('field', ['username', 'password'])
@@ -39,16 +39,16 @@ class TestDeleteBookingInvalidAuth:
         credentials = dict(zip(('username', 'password'), basic_auth))
         credentials[field] += 'Invalid'
         auth = credentials['username'], credentials['password']
-        response = api.delete_booking(booking.booking_id, auth=auth)
-        check_plain_text_error(response, 403)
+        response = api.delete_booking(booking.booking_id, auth=auth, expected_status_code=403)
+        check_plain_text_error(response)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('authorization', ['Bearer invalid', 'Basic !!!'], ids=['wrong-scheme', 'malformed-basic'])
     def test_malformed_authorization(self, api: ApiClient, booking: Booking, authorization: str) -> None:
         """Record rejection of unsupported and malformed Authorization headers."""
         # Expected error handling is unspecified; record current HTTP 403 with unchanged booking data.
-        response = api.delete_booking(booking.booking_id, authorization=authorization)
-        check_plain_text_error(response, 403)
+        response = api.delete_booking(booking.booking_id, authorization=authorization, expected_status_code=403)
+        check_plain_text_error(response)
         check_booking(api, booking.booking_id, booking.payload)
 
 
@@ -58,8 +58,8 @@ class TestDeleteBookingMissingId:
     def test_repeated_delete(self, api: ApiClient, deleted_booking: Booking, basic_auth: tuple[str, str]) -> None:
         """Record a second DELETE returning 405 while the original record remains absent."""
         # Expected repeat-deletion handling is unspecified; record current HTTP 405 and continued absence.
-        response = api.delete_booking(deleted_booking.booking_id, auth=basic_auth)
-        check_plain_text_error(response, 405)
+        response = api.delete_booking(deleted_booking.booking_id, auth=basic_auth, expected_status_code=405)
+        check_plain_text_error(response)
         check_deleted_booking(api, deleted_booking.booking_id)
 
 
@@ -70,8 +70,8 @@ class TestDeleteBookingInvalidId:
         """Record rejection of alphabetic text that cannot resolve to a numeric booking ID."""
         # Expected invalid-ID handling is unspecified; record current HTTP 405 without deleting the owned record.
         # The service parses IDs as integers; text without a numeric prefix cannot identify an existing booking.
-        response = api.delete_booking('not-an-id', auth=basic_auth)
-        check_plain_text_error(response, 405)
+        response = api.delete_booking('not-an-id', auth=basic_auth, expected_status_code=405)
+        check_plain_text_error(response)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('suffix', ['.5', 'invalid'], ids=['fractional', 'text-suffix'])
