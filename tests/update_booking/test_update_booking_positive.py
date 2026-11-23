@@ -6,7 +6,6 @@ import pytest
 
 from checkers.common import check_booking
 from checkers.common import check_form_update_response
-from checkers.common import check_status_code
 from checkers.common import check_xml_booking
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
@@ -260,7 +259,6 @@ class TestUpdateBookingFormats:
             auth=basic_auth,
             accept='application/x-www-form-urlencoded',
         )
-        check_status_code(response, 200)
         check_booking(api, booking.booking_id, replacement_payload)
         request.node.add_marker(
             pytest.mark.xfail(

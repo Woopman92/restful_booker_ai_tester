@@ -5,7 +5,6 @@ from typing import Any
 import pytest
 
 from checkers.common import check_form_update_response
-from checkers.common import check_status_code
 from checkers.common import check_xml_booking
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
@@ -266,7 +265,6 @@ class TestPartialUpdateBookingFormats:
         response = api.partial_update_booking(
             booking.booking_id, payload, auth=basic_auth, accept='application/x-www-form-urlencoded'
         )
-        check_status_code(response, 200)
         check_patched_booking(api, booking.booking_id, expected)
         request.node.add_marker(
             pytest.mark.xfail(

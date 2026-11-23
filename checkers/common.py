@@ -1,9 +1,12 @@
 """Checks shared across endpoint test groups, including booking schemas and persisted state."""
 
+from __future__ import annotations
+
 from collections.abc import Iterable
 from datetime import date
 from http import HTTPStatus
 from math import isfinite
+from typing import TYPE_CHECKING
 from typing import Any
 from urllib.parse import parse_qs
 from xml.etree import ElementTree
@@ -15,7 +18,9 @@ from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
 from constants import BOOKER_PASSWORD
 from constants import BOOKER_USERNAME
-from tests.client import ApiClient
+
+if TYPE_CHECKING:
+    from tests.client import ApiClient
 
 
 def cleanup_bookings(api: ApiClient, owned_ids: Iterable[int]) -> None:
@@ -32,45 +37,43 @@ def cleanup_bookings(api: ApiClient, owned_ids: Iterable[int]) -> None:
     errors = []
     for booking_id in dict.fromkeys(owned_ids):
         try:
-            response = api.delete_booking(booking_id, auth=(BOOKER_USERNAME, BOOKER_PASSWORD))
+            response = api.delete_booking(
+                booking_id, auth=(BOOKER_USERNAME, BOOKER_PASSWORD), expected_status_code=(201, 405)
+            )
             if response.status_code == 405:
-                response = api.get_booking(booking_id)
-                check_status_code(response, 404)
-            else:
-                check_status_code(response, 201)
+                api.get_booking(booking_id, expected_status_code=404)
         except Exception as error:
             errors.append(f'ID {booking_id}: {type(error).__name__}: {error}')
     if errors:
         raise CleanupError('Cleanup failed: ' + '; '.join(errors))
 
 
-def check_plain_text_error(response: Response, expected_status_code: int) -> None:
-    """Check the status, content type and standard HTTP phrase of a plain-text error.
+def check_plain_text_error(response: Response) -> None:
+    """Check the content type and standard HTTP phrase of a plain-text error.
 
     Args:
         response: Service response to validate.
-        expected_status_code: Standard HTTP status whose phrase is expected in the body.
 
     Raises:
-        AssertionError: The status, content type or response body is unexpected.
+        AssertionError: The content type or response body is unexpected.
         ValueError: The expected status code is not defined in HTTPStatus.
     """
-    assert response.status_code == expected_status_code, response.text
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/plain'
-    assert response.text == HTTPStatus(expected_status_code).phrase
+    assert response.text == HTTPStatus(response.status_code).phrase
 
 
-def check_status_code(response: Response, expected_status_code: int) -> None:
+def check_status_code(response: Response, expected_status_code: int | tuple[int, ...]) -> None:
     """Check an HTTP status independently of representation-specific assertions.
 
     Args:
         response: Service response to validate.
-        expected_status_code: Required HTTP response status.
+        expected_status_code: Required status or tuple of acceptable statuses.
 
     Raises:
         AssertionError: The status differs from the expected value.
     """
-    assert response.status_code == expected_status_code, (
+    allowed = (expected_status_code, ) if isinstance(expected_status_code, int) else expected_status_code
+    assert response.status_code in allowed, (
         f'Expected HTTP {expected_status_code}, received HTTP {response.status_code}'
     )
 
@@ -98,10 +101,9 @@ def booking_ids(response: Response) -> set[int]:
         set[int]: Unique booking IDs extracted from the validated response.
 
     Raises:
-        AssertionError: The status, content type, schema or ID uniqueness is invalid.
+        AssertionError: The content type, schema or ID uniqueness is invalid.
         ValueError: The response body is not valid JSON.
     """
-    assert response.status_code == 200, f'{response.status_code}: {response.text[:500]}'
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     body = response.json()
     assert isinstance(body, list), f'Expected an array, got {body!r}'
@@ -123,7 +125,7 @@ def check_booking_ids(response: Response, expected_ids: set[int]) -> None:
         expected_ids: Complete set of IDs expected in the response.
 
     Raises:
-        AssertionError: Response status, media type or schema is invalid.
+        AssertionError: Media type or schema is invalid.
         ResponseValuesMismatch: The ID sets differ.
         ValueError: The response body is not valid JSON.
     """
@@ -159,10 +161,9 @@ def check_json_booking(response: Response, expected_payload: dict[str, Any]) -> 
         expected_payload: Complete expected booking data.
 
     Raises:
-        AssertionError: Status, media type, schema or values differ.
+        AssertionError: Media type, schema or values differ.
         ValueError: JSON or a calendar date cannot be parsed.
     """
-    assert response.status_code == 200, response.text
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     body = response.json()
     check_booking_schema(body)
@@ -269,10 +270,9 @@ def check_xml_booking(response: Response, expected_payload: dict[str, Any]) -> N
         expected_payload: Complete original booking data.
 
     Raises:
-        AssertionError: Status, observed media type, XML structure or values differ.
+        AssertionError: Observed media type, XML structure or values differ.
         xml.etree.ElementTree.ParseError: The body is not well-formed XML.
     """
-    assert response.status_code == 200, response.text
     # The response Content-Type is not explicitly specified; record the observed text/html value.
     assert response.headers.get('Content-Type', '').split(';')[0] == 'text/html'
     root = ElementTree.fromstring(response.text)
@@ -305,7 +305,7 @@ def check_form_update_response(response: Response, expected_payload: dict[str, A
         expected_payload: Expected booking fields.
 
     Raises:
-        AssertionError: The status or encoded fields differ from the example structure.
+        AssertionError: The encoded fields differ from the example structure.
         FormResponseMismatch: The service returns its confirmed serializer error.
         ValueError: The body is not valid URL-encoded data.
     """
@@ -327,11 +327,10 @@ def form_response_fields(response: Response) -> dict[str, list[str]]:
         dict[str, list[str]]: Parsed fields, including blank values.
 
     Raises:
-        AssertionError: The HTTP status or body structure is unexpected.
+        AssertionError: The body structure is unexpected.
         FormResponseMismatch: The service returns its confirmed serializer error.
         ValueError: The response is not valid form data.
     """
-    check_status_code(response, 200)
     if response.text == 'formurlencoded is not a function':
         raise FormResponseMismatch(response.text)
     assert '=' in response.text, response.text

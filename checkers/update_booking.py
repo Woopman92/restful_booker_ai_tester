@@ -7,21 +7,19 @@ from requests import Response
 from checkers.common import _check_booking_values
 from checkers.common import _check_current_booking_values
 from checkers.common import check_booking_schema
-from checkers.common import check_status_code
 from tests.client import ApiClient
 
 
 def check_update_response_schema(response: Response) -> None:
-    """Check the documented success status, JSON media type and full booking schema.
+    """Check the JSON media type and full booking schema.
 
     Args:
         response: Update response whose values will be checked separately.
 
     Raises:
-        AssertionError: Status, media type or required field types are invalid.
+        AssertionError: Media type or required field types are invalid.
         ValueError: JSON or a calendar date is invalid.
     """
-    check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     check_booking_schema(response.json())
 
@@ -49,7 +47,7 @@ def check_update_booking_response(response: Response, expected_payload: dict[str
         expected_payload: Complete expected booking payload.
 
     Raises:
-        AssertionError: Status, schema or booking values differ.
+        AssertionError: Schema or booking values differ.
         ValueError: JSON or a calendar date cannot be parsed.
     """
     check_update_response_schema(response)
@@ -64,10 +62,9 @@ def check_current_update_response(response: Response, expected_payload: dict[str
         expected_payload: Currently observed fields, including malformed values.
 
     Raises:
-        AssertionError: Status, media type, object structure or observed values differ.
+        AssertionError: Media type, object structure or observed values differ.
         ValueError: The response is not valid JSON.
     """
-    check_status_code(response, 200)
     assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
     assert isinstance(response.json(), dict)
     _check_current_booking_values(response.json(), expected_payload)

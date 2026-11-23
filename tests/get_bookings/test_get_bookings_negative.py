@@ -24,8 +24,8 @@ class TestGetBookingsInvalidDates:
         # The expected result is unknown: the documentation does not define handling of these values.
         # This test records the current service behavior: HTTP 500 with a plain-text error.
         params = {'firstname': booking.payload['firstname'], field: value}
-        response = api.get_bookings(params=params)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.get_bookings(params=params, expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('field', ['checkin', 'checkout'])
     @pytest.mark.parametrize(
@@ -53,8 +53,8 @@ class TestGetBookingsQueryInputBehavior:
         # The expected result is unknown: the documentation does not define handling of this input.
         # This test records the current service behavior: HTTP 500 with a plain-text error.
         params = {'firstname': booking.payload['firstname'], field: 'true'}
-        response = api.get_bookings(params=params)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.get_bookings(params=params, expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('field', ['checkin', 'checkout'])
     def test_current_behavior_for_repeated_date_parameter(self, api: ApiClient, booking: Booking, field: str) -> None:
@@ -62,5 +62,5 @@ class TestGetBookingsQueryInputBehavior:
         # The expected result is unknown: the documentation does not define handling of repeated parameters.
         # This test records the current service behavior: HTTP 500 with a plain-text error.
         params = [('firstname', booking.payload['firstname']), (field, '2030-06-15'), (field, '2030-06-16')]
-        response = api.get_bookings(params=params)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.get_bookings(params=params, expected_status_code=500)
+        check_plain_text_error(response)

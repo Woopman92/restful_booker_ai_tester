@@ -57,13 +57,11 @@ def service_available(api: ApiClient) -> None:
     errors: list[str] = []
     for attempt in range(1, PING_ATTEMPTS + 1):
         try:
-            response = api.ping()
-        except requests.RequestException as error:
+            api.ping()
+        except (requests.RequestException, AssertionError) as error:
             errors.append(f'Attempt {attempt}: {type(error).__name__}: {error}')
         else:
-            if response.status_code == 201:
-                return
-            errors.append(f'Attempt {attempt}: HTTP {response.status_code} {response.reason}')
+            return
         if attempt < PING_ATTEMPTS:
             sleep(PING_RETRY_DELAY)
     pytest.exit(
@@ -135,7 +133,6 @@ def create_booking(api: ApiClient) -> Iterator[Callable[..., Booking]]:
             'additionalneeds': 'API test',
         }
         response = api.create_booking(payload)
-        assert response.status_code == 200, f'Cannot create test data: {response.status_code}: {response.text[:500]}'
         body = response.json()
         assert type(body.get('bookingid')) is int, f'Missing integer bookingid: {body!r}'
         owned_ids.append(body['bookingid'])
@@ -230,11 +227,9 @@ def deleted_booking(api: ApiClient, basic_auth: tuple[str, str]) -> Iterator[Boo
     }
     try:
         response = api.create_booking(payload)
-        assert response.status_code == 200
         booking_id = response.json()['bookingid']
         assert type(booking_id) is int
-        response = api.delete_booking(booking_id, auth=basic_auth)
-        assert response.status_code == 201
+        api.delete_booking(booking_id, auth=basic_auth)
         yield Booking(booking_id, payload)
     finally:
         try:

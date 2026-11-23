@@ -21,16 +21,16 @@ class TestMissingBookingFields:
         """Record the current server error when a validated mandatory field is absent."""
         # Error handling is unspecified; record the current HTTP 500 response.
         del booking_payload[field]
-        response = api.create_booking(booking_payload)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(booking_payload, expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('field', ['checkin', 'checkout'])
     def test_missing_nested_date(self, api: ApiClient, booking_payload: dict[str, Any], field: str) -> None:
         """Record the current response when one mandatory booking date is absent."""
         # Error handling is unspecified; record the current HTTP 500 response.
         del booking_payload['bookingdates'][field]
-        response = api.create_booking(booking_payload)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(booking_payload, expected_status_code=500)
+        check_plain_text_error(response)
 
     def test_missing_additionalneeds(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Record acceptance of an omitted additionalneeds field despite its required annotation."""
@@ -49,8 +49,8 @@ class TestInvalidBookingTypes:
         """Record rejection of non-string first or last names."""
         # Error handling is unspecified; record the current HTTP 500 response.
         booking_payload[field] = value
-        response = api.create_booking(booking_payload)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(booking_payload, expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('value', [None, 123, True, [], {}], ids=['null', 'number', 'boolean', 'array', 'object'])
     def test_unvalidated_additionalneeds(self, api: ApiClient, booking_payload: dict[str, Any], value: Any) -> None:
@@ -74,8 +74,8 @@ class TestInvalidBookingTypes:
         """Record rejection of null in validated mandatory scalar fields."""
         # Error handling is unspecified; record the observed HTTP 500 for null price or deposit.
         booking_payload[field] = None
-        response = api.create_booking(booking_payload)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(booking_payload, expected_status_code=500)
+        check_plain_text_error(response)
 
     def test_numeric_string_price(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Record conversion of a numeric string to an integer price."""
@@ -105,8 +105,8 @@ class TestInvalidBookingTypes:
         """Record rejection of invalid bookingdates container types."""
         # Error handling is unspecified; record the current HTTP 500 response.
         booking_payload['bookingdates'] = value
-        response = api.create_booking(booking_payload)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(booking_payload, expected_status_code=500)
+        check_plain_text_error(response)
 
 
 class TestInvalidBookingDates:
@@ -150,8 +150,8 @@ class TestInvalidBookingPayload:
     def test_empty_body(self, api: ApiClient) -> None:
         """Record the current response to a completely empty JSON body."""
         # Error handling is unspecified; record the current HTTP 500 response.
-        response = api.create_booking(body='')
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(body='', expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize(
         ('body', 'content_type'),
@@ -161,8 +161,8 @@ class TestInvalidBookingPayload:
     def test_malformed_body(self, api: ApiClient, body: str, content_type: str) -> None:
         """Record the parser error for malformed JSON or XML."""
         # Error handling is unspecified; record the current HTTP 400 response.
-        response = api.create_booking(body=body, content_type=content_type)
-        check_plain_text_error(response, expected_status_code=400)
+        response = api.create_booking(body=body, content_type=content_type, expected_status_code=400)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('content_type', ['text/plain', None], ids=['unsupported', 'absent'])
     def test_unparsed_content_type(
@@ -171,8 +171,8 @@ class TestInvalidBookingPayload:
         """Record handling of a JSON body without a supported JSON media type."""
         # Error handling is unspecified; record the current HTTP 500 response.
         body = json.dumps(booking_payload)
-        response = api.create_booking(body=body, content_type=content_type)
-        check_plain_text_error(response, expected_status_code=500)
+        response = api.create_booking(body=body, content_type=content_type, expected_status_code=500)
+        check_plain_text_error(response)
 
     @pytest.mark.parametrize('accept', ['application/pdf', None], ids=['unsupported', 'absent'])
     def test_unusable_accept(
@@ -181,8 +181,8 @@ class TestInvalidBookingPayload:
         """Record an error response that still creates a record, recovered during cleanup."""
         # Error handling is unspecified; the current service returns 418 after persisting the booking.
         creation_tracker.expected_recovered_count = 1
-        response = api.create_booking(booking_payload, accept=accept)
-        check_plain_text_error(response, expected_status_code=418)
+        response = api.create_booking(booking_payload, accept=accept, expected_status_code=418)
+        check_plain_text_error(response)
 
     def test_unknown_field(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Record that an unknown request field is omitted from the created booking."""
