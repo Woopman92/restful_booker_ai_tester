@@ -8,9 +8,8 @@ import pytest
 
 from checkers.common import check_booking
 from checkers.common import check_booking_ids
+from checkers.common import check_json_booking
 from checkers.common import check_plain_text_error
-from checkers.update_booking import check_current_saved_booking
-from checkers.update_booking import check_current_update_response
 from helpers.models import Booking
 from tests.client import ApiClient
 
@@ -117,8 +116,8 @@ class TestUpdateBookingMissingFields:
         del replacement_payload['additionalneeds']
         expected = {**replacement_payload, 'additionalneeds': booking.payload['additionalneeds']}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected)
-        check_current_saved_booking(api, booking.booking_id, expected)
+        check_json_booking(response, expected, schema_example=expected)
+        check_booking(api, booking.booking_id, expected, schema_example=expected)
 
 
 class TestUpdateBookingInvalidTypes:
@@ -193,8 +192,8 @@ class TestUpdateBookingInvalidTypes:
         # Invalid-input handling is unspecified; record acceptance and persistence of the supplied value.
         replacement_payload['additionalneeds'] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, replacement_payload)
-        check_current_saved_booking(api, booking.booking_id, replacement_payload)
+        check_json_booking(response, replacement_payload, schema_example=replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload, schema_example=replacement_payload)
 
     @pytest.mark.parametrize('value', ['bad', True, [], {}], ids=['string', 'boolean', 'array', 'object'])
     def test_price_coerced_to_null(
@@ -210,8 +209,8 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload['totalprice'] = value
         expected = {**replacement_payload, 'totalprice': None}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected)
-        check_current_saved_booking(api, booking.booking_id, expected)
+        check_json_booking(response, expected, schema_example=expected)
+        check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     def test_numeric_string_price(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
@@ -221,8 +220,8 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload['totalprice'] = '123'
         expected = {**replacement_payload, 'totalprice': 123}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected)
-        check_current_saved_booking(api, booking.booking_id, expected)
+        check_json_booking(response, expected, schema_example=expected)
+        check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     @pytest.mark.parametrize(
         ('value', 'expected'),
@@ -243,8 +242,8 @@ class TestUpdateBookingInvalidTypes:
         replacement_payload['depositpaid'] = value
         expected_payload = {**replacement_payload, 'depositpaid': expected}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected_payload)
-        check_current_saved_booking(api, booking.booking_id, expected_payload)
+        check_json_booking(response, expected_payload, schema_example=expected_payload)
+        check_booking(api, booking.booking_id, expected_payload, schema_example=expected_payload)
 
     @pytest.mark.parametrize('value', [[], 'invalid'], ids=['array', 'string'])
     def test_invalid_dates_object(
@@ -293,8 +292,8 @@ class TestUpdateBookingInvalidDates:
             'bookingdates': {**replacement_payload['bookingdates'], field: expected},
         }
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected_payload)
-        check_current_saved_booking(api, booking.booking_id, expected_payload)
+        check_json_booking(response, expected_payload, schema_example=expected_payload)
+        check_booking(api, booking.booking_id, expected_payload, schema_example=expected_payload)
 
     @pytest.mark.parametrize(
         ('checkin', 'checkout'),
@@ -314,8 +313,8 @@ class TestUpdateBookingInvalidDates:
         # The interval relation is unspecified; record current acceptance of these replacements.
         replacement_payload['bookingdates'] = {'checkin': checkin, 'checkout': checkout}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, replacement_payload)
-        check_current_saved_booking(api, booking.booking_id, replacement_payload)
+        check_json_booking(response, replacement_payload, schema_example=replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload, schema_example=replacement_payload)
 
 
 class TestUpdateBookingInvalidPayload:
@@ -387,8 +386,8 @@ class TestUpdateBookingInvalidPayload:
         replacement_payload['unknown'] = 'extra'
         expected = {key: value for key, value in replacement_payload.items() if key != 'unknown'}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_current_update_response(response, expected)
-        check_current_saved_booking(api, booking.booking_id, expected)
+        check_json_booking(response, expected, schema_example=expected)
+        check_booking(api, booking.booking_id, expected, schema_example=expected)
 
 
 class TestUpdateBookingMissingId:

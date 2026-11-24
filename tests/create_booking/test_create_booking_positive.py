@@ -6,8 +6,6 @@ import pytest
 
 from checkers.common import check_booking
 from checkers.create_booking import check_create_booking_response
-from checkers.create_booking import check_created_values
-from checkers.create_booking import check_creation_schema
 from checkers.create_booking import check_form_created_booking
 from checkers.create_booking import check_xml_created_booking
 from checkers.errors import FormResponseMismatch
@@ -81,7 +79,6 @@ class TestBookingValues:
         """Preserve a fractional Number rather than silently truncate it."""
         booking_payload['totalprice'] = 123.5
         response = api.create_booking(booking_payload)
-        check_creation_schema(response)
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
@@ -90,7 +87,7 @@ class TestBookingValues:
                 'sending 123.5 currently returns 123, losing the fractional part.',
             )
         )
-        check_created_values(response, booking_payload)
+        check_create_booking_response(response, booking_payload)
 
     def test_special_strings(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Preserve Unicode, spaces, punctuation and markup characters in JSON strings."""

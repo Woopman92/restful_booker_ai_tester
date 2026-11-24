@@ -2,6 +2,8 @@
 
 from requests import Response
 
+from checkers.common import json_body
+
 
 def check_created_token(response: Response) -> str:
     """Validate the documented success response and return its token.
@@ -16,8 +18,7 @@ def check_created_token(response: Response) -> str:
         AssertionError: The media type or token schema is unexpected.
         ValueError: The body is not valid JSON.
     """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    body = response.json()
+    body = json_body(response)
     assert isinstance(body, dict), 'Expected an authentication object'
     valid_token = isinstance(body.get('token'), str)
     assert valid_token, 'Expected a string token'
@@ -34,7 +35,8 @@ def check_bad_credentials(response: Response) -> None:
         AssertionError: The media type or failure schema differs.
         ValueError: The body is not valid JSON.
     """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    body = response.json()
-    valid_failure = isinstance(body, dict) and body == {'reason': 'Bad credentials'}
-    assert valid_failure, 'Expected only the Bad credentials reason and no token'
+    body = json_body(response)
+    valid_schema = isinstance(body, dict) and body.keys() == {'reason'} and isinstance(body['reason'], str)
+    assert valid_schema, 'Expected only a string reason'
+    valid_reason = body['reason'] == 'Bad credentials'
+    assert valid_reason, 'Unexpected reason for authentication failure'

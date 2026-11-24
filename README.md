@@ -91,7 +91,9 @@ Python or Poetry to be installed on the host.
   `checkers`, data transformations in `helpers`, and shared dataclasses in
   `helpers/models.py`. Keep API client methods in `tests/client.py`.
 - Use plain `assert` statements and register assertion rewriting before importing
-  checker modules. Keep response parsing inside checkers.
+  checker modules. Parse the response and validate its schema before comparing
+  field values. For observed booking responses, an example can define the
+  exact keys and nested types independently of the values being compared.
 - Compare JSON `totalprice` values numerically. Accept finite integers and floats
   and exclude booleans. Preserve exact type checks in current-behavior scenarios
   that observe coercion.
