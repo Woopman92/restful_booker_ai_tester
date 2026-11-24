@@ -2,9 +2,9 @@
 
 import pytest
 
-from checkers.common import check_booking_json_response
 from checkers.create_token import check_created_token
 from checkers.get_bookings import check_get_bookings_response
+from checkers.update_booking import check_update_booking_json_response
 from helpers.models import Booking
 from tests.client import ApiClient
 
@@ -29,7 +29,7 @@ class TestTokenUsage:
         token = check_created_token(response)
         updated_payload = {**booking.payload, 'firstname': booking.payload['firstname'] + 'Updated'}
         response = api.update_booking(booking.booking_id, updated_payload, token)
-        check_booking_json_response(response, updated_payload)
+        check_update_booking_json_response(response, updated_payload)
         params = {'firstname': updated_payload['firstname'], 'lastname': updated_payload['lastname']}
         response = api.get_bookings(params=params)
         check_get_bookings_response(response, exact_ids={booking.booking_id})
@@ -53,7 +53,7 @@ class TestTokenReissuance:
         for label, issued_token in [('Second', second_token), ('FirstAfterReissuance', token)]:
             updated_payload = {**booking.payload, 'firstname': booking.payload['firstname'] + label}
             response = api.update_booking(booking.booking_id, updated_payload, issued_token)
-            check_booking_json_response(response, updated_payload)
+            check_update_booking_json_response(response, updated_payload)
             params = {'firstname': updated_payload['firstname'], 'lastname': updated_payload['lastname']}
             response = api.get_bookings(params=params)
             check_get_bookings_response(response, exact_ids={booking.booking_id})
