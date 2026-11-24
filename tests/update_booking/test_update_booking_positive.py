@@ -5,13 +5,11 @@ from typing import Any
 import pytest
 
 from checkers.common import check_booking
-from checkers.common import check_form_update_response
-from checkers.common import check_xml_booking
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
-from checkers.update_booking import check_update_booking_response
-from checkers.update_booking import check_update_response_schema
-from checkers.update_booking import check_update_values
+from checkers.update_booking import check_update_booking_form_response
+from checkers.update_booking import check_update_booking_json_response
+from checkers.update_booking import check_update_booking_xml_response
 from helpers.models import Booking
 from helpers.payloads import form_payload
 from helpers.payloads import xml_payload
@@ -28,13 +26,13 @@ class TestUpdateBookingContract:
     ) -> None:
         """Replace every field with Basic authentication and preserve the original booking ID."""
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     def test_repeated_update(self, api: ApiClient, updated_booking: Booking, basic_auth: tuple[str, str]) -> None:
         """Repeat the fixture's valid PUT and verify the same persisted replacement state."""
         response = api.update_booking(updated_booking.booking_id, updated_booking.payload, auth=basic_auth)
-        check_update_booking_response(response, updated_booking.payload)
+        check_update_booking_json_response(response, updated_booking.payload)
         check_booking(api, updated_booking.booking_id, updated_booking.payload)
 
 
@@ -46,7 +44,7 @@ class TestUpdateBookingAuthorization:
     ) -> None:
         """Authorize a complete replacement using only a newly issued Cookie token."""
         response = api.update_booking(booking.booking_id, replacement_payload, token=token)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
 
@@ -64,7 +62,7 @@ class TestUpdateBookingValues:
     ) -> None:
         """Invert the initial deposit flag with one PUT and verify the persisted value."""
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('price', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
@@ -79,7 +77,7 @@ class TestUpdateBookingValues:
         """Persist integral JSON Numbers, including floating-point representations."""
         replacement_payload['totalprice'] = price
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     def test_fractional_price(
@@ -93,7 +91,6 @@ class TestUpdateBookingValues:
         """Preserve the fractional part allowed by the documented Number type."""
         replacement_payload['totalprice'] = 123.5
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_response_schema(response)
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
@@ -102,7 +99,7 @@ class TestUpdateBookingValues:
                 'PUT totalprice=123.5 currently returns 123, and subsequent GET also returns 123.',
             )
         )
-        check_update_values(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
@@ -119,7 +116,7 @@ class TestUpdateBookingValues:
         """Persist empty and one-character strings without an undocumented minimum length."""
         replacement_payload[field] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     def test_special_strings(
@@ -129,7 +126,7 @@ class TestUpdateBookingValues:
         replacement_payload['firstname'] += " Élodie O'Neil-李"
         replacement_payload['additionalneeds'] = 'Завтрак & tea <without sugar>'
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
@@ -148,7 +145,7 @@ class TestUpdateBookingValues:
         # Maximum lengths are unspecified; record current acceptance without truncation.
         replacement_payload[field] = value
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize(
@@ -168,7 +165,7 @@ class TestUpdateBookingValues:
         """Preserve valid leap-day and year-boundary intervals."""
         replacement_payload['bookingdates'] = {'checkin': checkin, 'checkout': checkout}
         response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_response(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
 
@@ -198,8 +195,7 @@ class TestUpdateBookingFormats:
         """Preserve either deposit flag supplied in a valid XML replacement."""
         body = xml_payload(replacement_payload)
         response = api.update_booking(booking.booking_id, body=body, content_type='text/xml', auth=basic_auth)
-        check_update_response_schema(response)
-        check_update_values(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     def test_xml_output(
@@ -209,7 +205,7 @@ class TestUpdateBookingFormats:
         response = api.update_booking(
             booking.booking_id, replacement_payload, auth=basic_auth, accept='application/xml'
         )
-        check_xml_booking(response, replacement_payload)
+        check_update_booking_xml_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.parametrize(
@@ -240,8 +236,7 @@ class TestUpdateBookingFormats:
             content_type='application/x-www-form-urlencoded',
             auth=basic_auth,
         )
-        check_update_response_schema(response)
-        check_update_values(response, replacement_payload)
+        check_update_booking_json_response(response, replacement_payload)
         check_booking(api, booking.booking_id, replacement_payload)
 
     def test_form_output(
@@ -268,4 +263,4 @@ class TestUpdateBookingFormats:
                 '"formurlencoded is not a function" with HTTP 200 text/html, although the update is persisted.',
             )
         )
-        check_form_update_response(response, replacement_payload)
+        check_update_booking_form_response(response, replacement_payload)

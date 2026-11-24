@@ -31,6 +31,7 @@
 
 1. Before making changes for a new task, switch to the local main branch and update it from the remote repository with git pull --ff-only origin main.
 2. Create a new task-specific branch from the updated main before editing files. Do not implement a new task directly on main or reuse a previous task's branch. Creating commits still requires the user's separate approval.
+3. Treat code and documentation work discussed in a side chat as part of the parent task. Use the same task branch for all edits, reviews, and checks in that side chat.
 
 ## Test Implementation Requirements
 
@@ -48,7 +49,7 @@
 12. Arrange test bodies in this order: prepare parameters, execute the request, and verify the response.
 13. Execute each service request on a separate line and store its result in a variable named response. Do not nest request execution inside a checker call's arguments.
 14. Extract repeated checks into functions in checkers. Place checks shared across endpoint test groups in common.py, including shared booking response, schema, and persistence checks. Place endpoint-specific checks in a module named after the corresponding test directory, such as get_bookings.py or create_token.py.
-15. Checkers should accept response and expected values, and extract and validate response data internally. To verify persisted state, checkers may accept an API client, a record ID, and expected values; these checkers execute the request and validate its response themselves.
+15. Checkers should accept response and expected values, and extract and validate response data internally. Validate the response schema before comparing field values. Keep type and structure checks in the schema stage only. For current-behavior responses with a different shape, use a custom schema based on the expected fields and types. To verify persisted state, checkers may accept an API client, a record ID, and expected values; these checkers execute the request and validate its response themselves.
 16. Register checker modules with pytest.register_assert_rewrite() before importing them.
 17. Format pytest.mark.parametrize() values consistently and put case descriptions in the shared ids argument rather than individual pytest.param(..., id=...) calls.
 18. When the documentation does not define the expected behavior, write a separate current-behavior test without xfail and mark it with pytest.mark.current_behavior in addition to positive or negative. This marker classifies observed behavior and does not change the test outcome. Add an English comment in the test body explaining that the expected result is unspecified and the test records the service's current behavior.
@@ -68,6 +69,10 @@
 1. Name directories under tests in snake_case based on the final functional name in the documentation URL: https://restful-booker.herokuapp.com/apidoc/#api-Booking-GetBookings → get_bookings.
 2. Name test files in snake_case using test_{test_directory_name}_{positive/negative}.py: positive tests go in test_get_bookings_positive.py and negative tests in test_get_bookings_negative.py.
 
+## Project Element Naming
+
+1. Name endpoint-specific response checkers `check_<endpoint>_response`, using the full endpoint name from the API documentation in snake_case. For example, use `check_delete_booking_response` for `DeleteBooking`.
+2. When tests cover multiple response formats for an endpoint, place the format immediately before `response`: `check_<endpoint>_<format>_response` (for example, `check_create_booking_xml_response`). Use `json`, `xml`, or `form` for the corresponding response representation. Shared checkers use the same format suffix, for example `check_booking_json_response`.
 
 ## Completion Criteria
 

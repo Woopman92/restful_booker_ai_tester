@@ -57,6 +57,23 @@ def check_plain_text_error(response: Response) -> None:
     assert response.text == HTTPStatus(response.status_code).phrase
 
 
+def json_body(response: Response) -> Any:
+    """Read a response with the expected JSON media type.
+
+    Args:
+        response: Service response to decode.
+
+    Returns:
+        Any: Decoded JSON value.
+
+    Raises:
+        AssertionError: The media type is unexpected.
+        ValueError: The body is not valid JSON.
+    """
+    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
+    return response.json()
+
+
 def check_number(value: Any) -> None:
     """Check a JSON Number without treating Boolean as numeric.
 
@@ -83,8 +100,7 @@ def booking_ids(response: Response) -> set[int]:
         AssertionError: The content type, schema or ID uniqueness is invalid.
         ValueError: The response body is not valid JSON.
     """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    body = response.json()
+    body = json_body(response)
     assert isinstance(body, list), f'Expected an array, got {body!r}'
     ids = []
     for item in body:
@@ -96,32 +112,20 @@ def booking_ids(response: Response) -> set[int]:
     return set(ids)
 
 
-def check_booking_ids(response: Response, expected_ids: set[int]) -> None:
-    """Check that the response contains exactly the expected booking IDs.
-
-    Args:
-        response: Booking list response to validate.
-        expected_ids: Complete set of IDs expected in the response.
-
-    Raises:
-        AssertionError: Media type or schema is invalid.
-        ResponseValuesMismatch: The ID sets differ.
-        ValueError: The response body is not valid JSON.
-    """
-    actual_ids = booking_ids(response)
-    try:
-        assert actual_ids == expected_ids
-    except AssertionError as error:
-        raise ResponseValuesMismatch(str(error)) from error
-
-
-def check_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
+def check_booking(
+    api: ApiClient,
+    booking_id: int,
+    expected_payload: dict[str, Any],
+    *,
+    schema_example: dict[str, Any] | None = None
+) -> None:
     """Retrieve an owned booking and validate its full schema and expected values.
 
     Args:
         api: Client used for the independent retrieval.
         booking_id: ID of the test-owned booking.
         expected_payload: Complete expected booking data.
+        schema_example: Optional example of an observed response shape and field types.
 
     Raises:
         AssertionError: Retrieval status, media type, schema or values differ.
@@ -129,37 +133,56 @@ def check_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, A
         requests.RequestException: Retrieval fails.
     """
     response = api.get_booking(booking_id)
-    check_json_booking(response, expected_payload)
+    check_booking_json_response(response, expected_payload, schema_example=schema_example)
 
 
-def check_json_booking(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_booking_json_response(
+    response: Response, expected_payload: dict[str, Any], *, schema_example: dict[str, Any] | None = None
+) -> None:
     """Validate the JSON booking schema and compare all expected values.
 
     Args:
         response: JSON booking response from a read or write operation.
         expected_payload: Complete expected booking data.
+        schema_example: Optional example of an observed response shape and field types.
 
     Raises:
         AssertionError: Media type, schema or values differ.
         ValueError: JSON or a calendar date cannot be parsed.
     """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    body = response.json()
-    check_booking_schema(body)
-    assert body == expected_payload
+    body = json_body(response)
+    check_booking_schema(body, schema_example=schema_example)
+    check_booking_values(body, expected_payload)
 
 
-def check_booking_schema(body: Any) -> None:
+def check_booking_schema(body: Any, *, schema_example: dict[str, Any] | None = None) -> None:
     """Validate required fields, JSON types and calendar dates of a booking object.
 
     Args:
         body: Decoded booking object to validate.
+        schema_example: Optional example defining the exact observed keys and JSON types.
 
     Raises:
         AssertionError: Required fields, types or date representations are invalid.
         ValueError: A calendar date cannot be parsed.
     """
+    if schema_example is not None:
+        check_example_schema(body, schema_example)
+        return
     check_booking_field_types(body)
+    check_calendar_dates(body)
+
+
+def check_calendar_dates(body: dict[str, Any]) -> None:
+    """Validate the calendar values of structurally valid date strings.
+
+    Args:
+        body: Booking with string checkin and checkout fields.
+
+    Raises:
+        AssertionError: A date is not in canonical format.
+        ValueError: A date cannot be parsed.
+    """
     for field in ('checkin', 'checkout'):
         value = body['bookingdates'][field]
         assert date.fromisoformat(value).isoformat() == value
@@ -175,17 +198,19 @@ def check_booking_field_types(body: Any) -> None:
         AssertionError: A required field is missing or has an invalid JSON type.
     """
     assert isinstance(body, dict)
+    assert body.keys() == {'firstname', 'lastname', 'totalprice', 'depositpaid', 'bookingdates', 'additionalneeds'}
     for field in ('firstname', 'lastname', 'additionalneeds'):
         assert isinstance(body.get(field), str), f'Expected string field {field}'
     check_number(body.get('totalprice'))
     assert type(body.get('depositpaid')) is bool
     assert isinstance(body.get('bookingdates'), dict)
+    assert body['bookingdates'].keys() == {'checkin', 'checkout'}
     for field in ('checkin', 'checkout'):
-        value = body['bookingdates'].get(field)
+        value = body['bookingdates'][field]
         assert isinstance(value, str)
 
 
-def _check_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
+def check_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
     """Compare contract values using JSON Number semantics after structural checks.
 
     Args:
@@ -193,32 +218,34 @@ def _check_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> N
         expected: Expected booking values, allowing numerically equal int and float.
 
     Raises:
-        AssertionError: Required fields or JSON types are invalid.
         ResponseValuesMismatch: Booking values differ.
     """
-    check_booking_field_types(actual)
     try:
         assert actual == expected
     except AssertionError as error:
         raise ResponseValuesMismatch(str(error)) from error
 
 
-def _check_current_booking_values(actual: dict[str, Any], expected: dict[str, Any]) -> None:
-    """Compare booking data and top-level value types after response validation.
+def check_example_schema(actual: Any, example: Any, path: str = 'booking') -> None:
+    """Check exact JSON types and nested structure using an example as the schema.
 
     Args:
-        actual: Decoded booking data from a validated response envelope.
-        expected: Expected booking values, including current-behavior cases.
+        actual: Decoded response data.
+        example: Expected shape, including object keys and positional list items.
+        path: Field path used in diagnostics.
 
     Raises:
-        ResponseValuesMismatch: Booking values or their types differ.
+        AssertionError: A type, key set or array length differs.
     """
-    try:
-        assert actual == expected
-        for name, value in expected.items():
-            assert type(actual[name]) is type(value), f'Unexpected type for {name}'
-    except AssertionError as error:
-        raise ResponseValuesMismatch(str(error)) from error
+    assert type(actual) is type(example), f'Unexpected type at {path}'
+    if isinstance(example, dict):
+        assert actual.keys() == example.keys(), f'Unexpected fields at {path}'
+        for key, value in example.items():
+            check_example_schema(actual[key], value, f'{path}.{key}')
+    elif isinstance(example, list):
+        assert len(actual) == len(example), f'Unexpected array length at {path}'
+        for index, value in enumerate(example):
+            check_example_schema(actual[index], value, f'{path}[{index}]')
 
 
 def _booking_text_fields(payload: dict[str, Any]) -> dict[str, str]:
@@ -241,7 +268,7 @@ def _booking_text_fields(payload: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def check_xml_booking(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_booking_xml_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Validate the XML root, required elements and expected field values.
 
     Args:
@@ -270,13 +297,16 @@ def check_xml_booking_data(root: ElementTree.Element, expected_payload: dict[str
     """
     assert root.tag == 'booking'
     assert len(root.findall('bookingdates')) == 1
-    for path, expected_text in _booking_text_fields(expected_payload).items():
+    expected = _booking_text_fields(expected_payload)
+    actual = {}
+    for path in expected:
         elements = root.findall(path)
         assert len(elements) == 1, f'Expected one element at {path}'
-        assert elements[0].text == expected_text
+        actual[path] = elements[0].text
+    assert actual == expected
 
 
-def check_form_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_booking_form_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Check the URL-encoded update representation shown in the documentation.
 
     Args:
@@ -289,11 +319,31 @@ def check_form_update_response(response: Response, expected_payload: dict[str, A
         ValueError: The body is not valid URL-encoded data.
     """
     fields = form_response_fields(response)
-    for name in ('firstname', 'lastname', 'totalprice', 'additionalneeds'):
-        assert fields.get(name) == [str(expected_payload[name])]
-    assert fields.get('depositpaid') == [str(expected_payload['depositpaid']).lower()]
-    for name in ('checkin', 'checkout'):
-        assert fields.get(f'bookingdates[{name}]') == [expected_payload['bookingdates'][name]]
+    check_form_booking_fields(fields, expected_payload)
+
+
+def check_form_booking_fields(fields: dict[str, list[str]], expected_payload: dict[str, Any], prefix: str = '') -> None:
+    """Validate field cardinality before comparing form values.
+
+    Args:
+        fields: Parsed URL-encoded fields.
+        expected_payload: Booking values before form encoding.
+        prefix: Optional outer form field containing the booking.
+
+    Raises:
+        AssertionError: A required field is missing, repeated or has an unexpected value.
+    """
+    expected = {}
+    for path, value in _booking_text_fields(expected_payload).items():
+        first, *nested = path.split('/')
+        key = f'{prefix}[{first}]' if prefix else first
+        key += ''.join(f'[{part}]' for part in nested)
+        expected[key] = value
+    actual = {}
+    for key in expected:
+        assert key in fields and len(fields[key]) == 1, f'Expected one form field at {key}'
+        actual[key] = fields[key][0]
+    assert actual == expected
 
 
 def form_response_fields(response: Response) -> dict[str, list[str]]:

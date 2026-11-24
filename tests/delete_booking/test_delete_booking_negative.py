@@ -4,7 +4,7 @@ import pytest
 
 from checkers.common import check_booking
 from checkers.common import check_plain_text_error
-from checkers.delete_booking import check_delete_response
+from checkers.delete_booking import check_delete_booking_response
 from checkers.delete_booking import check_deleted_booking
 from helpers.models import Booking
 from tests.client import ApiClient
@@ -82,5 +82,5 @@ class TestDeleteBookingInvalidId:
         # Expected ID-format handling is unspecified; record current acceptance of the owned numeric prefix.
         booking_id = f'{booking.booking_id}{suffix}'
         response = api.delete_booking(booking_id, auth=basic_auth)
-        check_delete_response(response)
+        check_delete_booking_response(response)
         check_deleted_booking(api, booking.booking_id)

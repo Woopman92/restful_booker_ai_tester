@@ -4,80 +4,34 @@ from typing import Any
 
 from requests import Response
 
-from checkers.common import _check_booking_values
-from checkers.common import _check_current_booking_values
-from checkers.common import check_booking_schema
+from checkers.common import check_booking_field_types
+from checkers.common import check_booking_values
+from checkers.common import check_calendar_dates
+from checkers.common import json_body
+from checkers.errors import ResponseValuesMismatch
 from tests.client import ApiClient
 
 
-def check_partial_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_partial_update_booking_json_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Check all fields, including values that should remain unchanged after PATCH.
 
     Args:
-        response: JSON response to the partial update or its independent retrieval.
+        response: JSON response to the partial update.
         expected_payload: Full expected booking state.
 
     Raises:
-        ResponseValuesMismatch: A booking value or its type differs.
+        ResponseValuesMismatch: A booking value differs.
         AssertionError: Media type or schema is invalid.
-        ValueError: JSON or a calendar date cannot be parsed.
+        ValueError: The response is not valid JSON.
     """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    # Known malformed calendar values are compared as data, after structural validation.
-    _check_booking_values(response.json(), expected_payload)
-    check_booking_schema(response.json())
-
-
-def check_current_partial_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
-    """Compare observed invalid-input results without requiring valid booking field types.
-
-    Args:
-        response: JSON response from PATCH or GET.
-        expected_payload: Full observed state, possibly containing invalid values.
-
-    Raises:
-        ResponseValuesMismatch: Fields or their types differ from the expected state.
-        AssertionError: Media type or object structure is invalid.
-        ValueError: The response is not JSON.
-    """
-    assert response.headers.get('Content-Type', '').split(';')[0] == 'application/json'
-    actual = response.json()
-    assert isinstance(actual, dict)
-    _check_current_booking_values(actual, expected_payload)
-
-
-def check_patched_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
-    """Read the owned record and check its full valid schema and expected state.
-
-    Args:
-        api: Client used for the independent retrieval.
-        booking_id: ID of the test-owned booking.
-        expected_payload: Full expected booking state after PATCH.
-
-    Raises:
-        AssertionError: Schema or persisted values differ.
-        ValueError: JSON or a calendar date cannot be parsed.
-        requests.RequestException: Retrieval fails.
-    """
-    response = api.get_booking(booking_id)
-    check_partial_update_response(response, expected_payload)
-
-
-def check_current_patched_booking(api: ApiClient, booking_id: int, expected_payload: dict[str, Any]) -> None:
-    """Read persisted invalid-input results without imposing the valid-input schema.
-
-    Args:
-        api: Client used for the independent retrieval.
-        booking_id: ID of the test-owned booking.
-        expected_payload: Full observed state after the request.
-
-    Raises:
-        AssertionError: Response metadata or persisted values differ.
-        ValueError: The response is not JSON.
-        requests.RequestException: Retrieval fails.
-    """
-    response = api.get_booking(booking_id)
-    check_current_partial_update_response(response, expected_payload)
+    booking = json_body(response)
+    check_booking_field_types(booking)
+    # A malformed calendar string in a structurally valid PATCH response is a value mismatch.
+    try:
+        check_calendar_dates(booking)
+    except (ValueError, AssertionError) as error:
+        raise ResponseValuesMismatch(f"Invalid booking date: {booking['bookingdates']!r}") from error
+    check_booking_values(booking, expected_payload)
 
 
 def check_serialization_error(response: Response, expected_message: str) -> None:

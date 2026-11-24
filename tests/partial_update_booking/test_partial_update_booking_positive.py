@@ -4,12 +4,12 @@ from typing import Any
 
 import pytest
 
-from checkers.common import check_form_update_response
-from checkers.common import check_xml_booking
+from checkers.common import check_booking
+from checkers.common import check_booking_form_response
+from checkers.common import check_booking_xml_response
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
-from checkers.partial_update_booking import check_partial_update_response
-from checkers.partial_update_booking import check_patched_booking
+from checkers.partial_update_booking import check_partial_update_booking_json_response
 from helpers.models import Booking
 from helpers.payloads import form_payload
 from helpers.payloads import merge_booking_patch
@@ -37,8 +37,8 @@ class TestPartialUpdateBookingContract:
         payload = {field: replacement_payload[field]}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     def test_field_combination(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
@@ -47,16 +47,16 @@ class TestPartialUpdateBookingContract:
         payload = {field: replacement_payload[field] for field in ('firstname', 'lastname')}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     def test_all_fields(
         self, api: ApiClient, booking: Booking, replacement_payload: dict[str, Any], basic_auth: tuple[str, str]
     ) -> None:
         """Apply a complete payload through PATCH and preserve the booking ID."""
         response = api.partial_update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_partial_update_response(response, replacement_payload)
-        check_patched_booking(api, booking.booking_id, replacement_payload)
+        check_partial_update_booking_json_response(response, replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload)
 
     @pytest.mark.xfail(
         strict=True,
@@ -77,8 +77,8 @@ class TestPartialUpdateBookingContract:
         payload = {'bookingdates': {field: replacement_payload['bookingdates'][field]}}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
 
 class TestPartialUpdateBookingAuthorization:
@@ -91,8 +91,8 @@ class TestPartialUpdateBookingAuthorization:
         payload = {'firstname': replacement_payload['firstname']}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, token=token)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
 
 class TestPartialUpdateBookingFields:
@@ -108,8 +108,8 @@ class TestPartialUpdateBookingFields:
         payload = {'depositpaid': not booking.payload['depositpaid']}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize('price', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
     def test_integer_price(
@@ -119,8 +119,8 @@ class TestPartialUpdateBookingFields:
         payload = {'totalprice': price}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.xfail(
         strict=True,
@@ -133,8 +133,8 @@ class TestPartialUpdateBookingFields:
         payload = {'totalprice': 123.5}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['', 'x', " Élodie O'Neil-李 & <tea> "], ids=['empty', 'one-character', 'special'])
@@ -145,8 +145,8 @@ class TestPartialUpdateBookingFields:
         payload = {field: value}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['a' * 1024, 'Ж' * 1024], ids=['ascii-1024', 'unicode-1024'])
@@ -159,8 +159,8 @@ class TestPartialUpdateBookingFields:
         payload = {field: value}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize(('checkin', 'checkout'), [('2028-02-29', '2028-03-01'), ('2030-12-31', '2031-01-01')],
                              ids=['leap-day', 'year-transition'])
@@ -171,8 +171,8 @@ class TestPartialUpdateBookingFields:
         payload = {'bookingdates': {'checkin': checkin, 'checkout': checkout}}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
 
 class TestPartialUpdateBookingFormats:
@@ -184,8 +184,8 @@ class TestPartialUpdateBookingFormats:
         expected = merge_booking_patch(booking.payload, payload)
         body = xml_payload(payload)
         response = api.partial_update_booking(booking.booking_id, body=body, content_type='text/xml', auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     def test_form_input(self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str]) -> None:
         """Update only a name supplied as form data without injecting omitted fields."""
@@ -195,8 +195,8 @@ class TestPartialUpdateBookingFormats:
         response = api.partial_update_booking(
             booking.booking_id, body=body, content_type='application/x-www-form-urlencoded', auth=basic_auth
         )
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize(
         'booking',
@@ -219,8 +219,8 @@ class TestPartialUpdateBookingFormats:
         expected = merge_booking_patch(booking.payload, payload)
         body = xml_payload(payload)
         response = api.partial_update_booking(booking.booking_id, body=body, content_type='text/xml', auth=basic_auth)
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize(
         'booking',
@@ -245,16 +245,16 @@ class TestPartialUpdateBookingFormats:
         response = api.partial_update_booking(
             booking.booking_id, body=body, content_type='application/x-www-form-urlencoded', auth=basic_auth
         )
-        check_partial_update_response(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_partial_update_booking_json_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     def test_xml_output(self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str]) -> None:
         """Return the complete XML booking after changing a single JSON field."""
         payload = {'firstname': booking.payload['firstname'] + 'Changed'}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth, accept='application/xml')
-        check_xml_booking(response, expected)
-        check_patched_booking(api, booking.booking_id, expected)
+        check_booking_xml_response(response, expected)
+        check_booking(api, booking.booking_id, expected)
 
     def test_form_output(
         self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str], request: pytest.FixtureRequest
@@ -265,7 +265,7 @@ class TestPartialUpdateBookingFormats:
         response = api.partial_update_booking(
             booking.booking_id, payload, auth=basic_auth, accept='application/x-www-form-urlencoded'
         )
-        check_patched_booking(api, booking.booking_id, expected)
+        check_booking(api, booking.booking_id, expected)
         request.node.add_marker(
             pytest.mark.xfail(
                 strict=True,
@@ -274,4 +274,4 @@ class TestPartialUpdateBookingFormats:
                 'HTTP 200 text/html "formurlencoded is not a function", although the patch is persisted.',
             )
         )
-        check_form_update_response(response, expected)
+        check_booking_form_response(response, expected)
