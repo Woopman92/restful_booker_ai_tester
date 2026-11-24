@@ -6,7 +6,7 @@ from checkers.common import check_plain_text_error
 from tests.client import ApiClient
 
 
-def check_delete_response(response: Response) -> None:
+def check_delete_booking_response(response: Response) -> None:
     """Check the observed plain-text representation.
 
     Args:

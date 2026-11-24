@@ -5,9 +5,9 @@ from typing import Any
 import pytest
 
 from checkers.common import check_booking
-from checkers.create_booking import check_create_booking_response
-from checkers.create_booking import check_form_created_booking
-from checkers.create_booking import check_xml_created_booking
+from checkers.create_booking import check_create_booking_form_response
+from checkers.create_booking import check_create_booking_json_response
+from checkers.create_booking import check_create_booking_xml_response
 from checkers.errors import FormResponseMismatch
 from checkers.errors import ResponseValuesMismatch
 from helpers.payloads import form_payload
@@ -24,16 +24,16 @@ class TestCreateBookingContract:
     def test_create_booking(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Create a complete booking and confirm persistence with a read by its ID."""
         response = api.create_booking(booking_payload)
-        booking_id = check_create_booking_response(response, booking_payload)
+        booking_id = check_create_booking_json_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
     def test_independent_creations(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Assign distinct IDs to two independent creations without assuming sequential IDs."""
         response = api.create_booking(booking_payload)
-        first_id = check_create_booking_response(response, booking_payload)
+        first_id = check_create_booking_json_response(response, booking_payload)
         second_payload = {**booking_payload, 'lastname': booking_payload['lastname'] + 'Second'}
         response = api.create_booking(second_payload)
-        second_id = check_create_booking_response(response, second_payload)
+        second_id = check_create_booking_json_response(response, second_payload)
         assert first_id != second_id
         check_booking(api, first_id, booking_payload)
         check_booking(api, second_id, second_payload)
@@ -48,9 +48,9 @@ class TestDuplicateBookingCreation:
         # Deduplication and POST idempotency are unspecified in the documentation.
         # This test records current behavior: identical payloads create separate bookings with distinct IDs.
         response = api.create_booking(booking_payload)
-        first_id = check_create_booking_response(response, booking_payload)
+        first_id = check_create_booking_json_response(response, booking_payload)
         response = api.create_booking(booking_payload)
-        second_id = check_create_booking_response(response, booking_payload)
+        second_id = check_create_booking_json_response(response, booking_payload)
         assert first_id != second_id
         check_booking(api, first_id, booking_payload)
         check_booking(api, second_id, booking_payload)
@@ -64,14 +64,14 @@ class TestBookingValues:
         """Preserve either valid boolean deposit value."""
         booking_payload['depositpaid'] = value
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
     @pytest.mark.parametrize('value', [-1, 0, 1, 123.0], ids=['negative', 'zero', 'positive', 'integral-float'])
     def test_integer_price(self, api: ApiClient, booking_payload: dict[str, Any], value: int | float) -> None:
         """Preserve integral JSON Numbers, including floating-point representations."""
         booking_payload['totalprice'] = value
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
     def test_fractional_price(
         self, api: ApiClient, booking_payload: dict[str, Any], request: pytest.FixtureRequest
@@ -87,14 +87,14 @@ class TestBookingValues:
                 'sending 123.5 currently returns 123, losing the fractional part.',
             )
         )
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
     def test_special_strings(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Preserve Unicode, spaces, punctuation and markup characters in JSON strings."""
         booking_payload['firstname'] += " Élodie O'Neil-李"
         booking_payload['additionalneeds'] = 'Завтрак & tea <without sugar>'
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
     @pytest.mark.parametrize('field', ['firstname', 'lastname', 'additionalneeds'])
     @pytest.mark.parametrize('value', ['', 'x'], ids=['empty', 'one-character'])
@@ -102,7 +102,7 @@ class TestBookingValues:
         """Preserve short strings because the contract specifies no minimum length."""
         booking_payload[field] = value
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
     @pytest.mark.parametrize(
         ('checkin', 'checkout'),
@@ -113,7 +113,7 @@ class TestBookingValues:
         """Preserve valid leap-day and year-boundary intervals."""
         booking_payload['bookingdates'] = {'checkin': checkin, 'checkout': checkout}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload)
+        check_create_booking_json_response(response, booking_payload)
 
 
 @pytest.mark.current_behavior
@@ -127,7 +127,7 @@ class TestLongBookingStrings:
         # This test records current acceptance and persistence without truncation.
         booking_payload[field] = 'a' * 1024
         response = api.create_booking(booking_payload)
-        booking_id = check_create_booking_response(response, booking_payload)
+        booking_id = check_create_booking_json_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
     def test_long_unicode_string(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
@@ -135,7 +135,7 @@ class TestLongBookingStrings:
         # Maximum lengths are unspecified; this test records current behavior for multibyte text.
         booking_payload['additionalneeds'] = 'Ж' * 1024
         response = api.create_booking(booking_payload)
-        booking_id = check_create_booking_response(response, booking_payload)
+        booking_id = check_create_booking_json_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
 
@@ -146,20 +146,20 @@ class TestBookingFormats:
         """Accept a complete booking sent as text/xml."""
         body = xml_payload(booking_payload)
         response = api.create_booking(body=body, content_type='text/xml')
-        booking_id = check_create_booking_response(response, booking_payload)
+        booking_id = check_create_booking_json_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
     def test_xml_output(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Return the documented created-booking XML envelope and persist its fields."""
         response = api.create_booking(booking_payload, accept='application/xml')
-        booking_id = check_xml_created_booking(response, booking_payload)
+        booking_id = check_create_booking_xml_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
     def test_form_input(self, api: ApiClient, booking_payload: dict[str, Any]) -> None:
         """Accept form fields and nested dates encoded using bracket notation."""
         body = form_payload(booking_payload)
         response = api.create_booking(body=body, content_type='application/x-www-form-urlencoded')
-        booking_id = check_create_booking_response(response, booking_payload)
+        booking_id = check_create_booking_json_response(response, booking_payload)
         check_booking(api, booking_id, booking_payload)
 
     def test_form_output(
@@ -181,4 +181,4 @@ class TestBookingFormats:
                 'and is recovered by unique names and deleted at teardown.',
             )
         )
-        check_form_created_booking(response, booking_payload)
+        check_create_booking_form_response(response, booking_payload)

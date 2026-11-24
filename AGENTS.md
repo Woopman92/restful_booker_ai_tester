@@ -31,6 +31,7 @@
 
 1. Before making changes for a new task, switch to the local main branch and update it from the remote repository with git pull --ff-only origin main.
 2. Create a new task-specific branch from the updated main before editing files. Do not implement a new task directly on main or reuse a previous task's branch. Creating commits still requires the user's separate approval.
+3. Treat code and documentation work discussed in a side chat as part of the parent task. Use the same task branch for all edits, reviews, and checks in that side chat.
 
 ## Test Implementation Requirements
 
@@ -68,6 +69,10 @@
 1. Name directories under tests in snake_case based on the final functional name in the documentation URL: https://restful-booker.herokuapp.com/apidoc/#api-Booking-GetBookings → get_bookings.
 2. Name test files in snake_case using test_{test_directory_name}_{positive/negative}.py: positive tests go in test_get_bookings_positive.py and negative tests in test_get_bookings_negative.py.
 
+## Project Element Naming
+
+1. Name endpoint-specific response checkers `check_<endpoint>_response`, using the full endpoint name from the API documentation in snake_case. For example, use `check_delete_booking_response` for `DeleteBooking`.
+2. When tests cover multiple response formats for an endpoint, place the format immediately before `response`: `check_<endpoint>_<format>_response` (for example, `check_create_booking_xml_response`). Use `json`, `xml`, or `form` for the corresponding response representation. Shared checkers use the same format suffix, for example `check_booking_json_response`.
 
 ## Completion Criteria
 

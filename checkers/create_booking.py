@@ -35,7 +35,7 @@ def check_create_booking_schema(response: Response, *, schema_example: dict[str,
     return body
 
 
-def check_create_booking_response(
+def check_create_booking_json_response(
     response: Response, expected_payload: dict[str, Any], *, schema_example: dict[str, Any] | None = None
 ) -> int:
     """Validate the documented creation schema and expected booking values.
@@ -57,7 +57,7 @@ def check_create_booking_response(
     return body['bookingid']
 
 
-def check_xml_created_booking(response: Response, expected_payload: dict[str, Any]) -> int:
+def check_create_booking_xml_response(response: Response, expected_payload: dict[str, Any]) -> int:
     """Validate the documented XML creation envelope and nested booking values.
 
     Args:
@@ -84,7 +84,7 @@ def check_xml_created_booking(response: Response, expected_payload: dict[str, An
     return booking_id
 
 
-def check_form_created_booking(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_create_booking_form_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Check the URL-encoded creation response shown in the documentation example.
 
     Args:

@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from checkers.common import check_json_booking
+from checkers.common import check_booking_json_response
 from helpers.models import Booking
 from tests.client import ApiClient
 
@@ -31,5 +31,5 @@ def updated_booking(
         requests.RequestException: The update request fails.
     """
     response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-    check_json_booking(response, replacement_payload)
+    check_booking_json_response(response, replacement_payload)
     return Booking(booking.booking_id, deepcopy(replacement_payload))

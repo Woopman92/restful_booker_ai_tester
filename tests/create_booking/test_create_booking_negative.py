@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from checkers.common import check_plain_text_error
-from checkers.create_booking import check_create_booking_response
+from checkers.create_booking import check_create_booking_json_response
 from tests.client import ApiClient
 from tests.create_booking.support import CreationTracker
 
@@ -37,7 +37,7 @@ class TestMissingBookingFields:
         # Invalid-input behavior is unspecified; the current service creates a record without this field.
         del booking_payload['additionalneeds']
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload, schema_example=booking_payload)
+        check_create_booking_json_response(response, booking_payload, schema_example=booking_payload)
 
 
 class TestInvalidBookingTypes:
@@ -58,7 +58,7 @@ class TestInvalidBookingTypes:
         # Invalid-input behavior is unspecified; record the currently accepted value without coercion.
         booking_payload['additionalneeds'] = value
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload, schema_example=booking_payload)
+        check_create_booking_json_response(response, booking_payload, schema_example=booking_payload)
 
     @pytest.mark.parametrize('value', ['bad', True, [], {}], ids=['string', 'boolean', 'array', 'object'])
     def test_price_coerced_to_null(self, api: ApiClient, booking_payload: dict[str, Any], value: Any) -> None:
@@ -67,7 +67,7 @@ class TestInvalidBookingTypes:
         booking_payload['totalprice'] = value
         expected = {**booking_payload, 'totalprice': None}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, expected, schema_example=expected)
+        check_create_booking_json_response(response, expected, schema_example=expected)
 
     @pytest.mark.parametrize('field', ['totalprice', 'depositpaid'])
     def test_null_mandatory_field(self, api: ApiClient, booking_payload: dict[str, Any], field: str) -> None:
@@ -83,7 +83,7 @@ class TestInvalidBookingTypes:
         booking_payload['totalprice'] = '123'
         expected = {**booking_payload, 'totalprice': 123}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, expected, schema_example=expected)
+        check_create_booking_json_response(response, expected, schema_example=expected)
 
     @pytest.mark.parametrize(
         ('value', 'expected'),
@@ -98,7 +98,7 @@ class TestInvalidBookingTypes:
         booking_payload['depositpaid'] = value
         expected_payload = {**booking_payload, 'depositpaid': expected}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, expected_payload, schema_example=expected_payload)
+        check_create_booking_json_response(response, expected_payload, schema_example=expected_payload)
 
     @pytest.mark.parametrize('value', [None, [], 'invalid'], ids=['null', 'array', 'string'])
     def test_invalid_dates_object(self, api: ApiClient, booking_payload: dict[str, Any], value: Any) -> None:
@@ -127,7 +127,7 @@ class TestInvalidBookingDates:
         booking_payload['bookingdates'][field] = value
         expected_payload = {**booking_payload, 'bookingdates': {**booking_payload['bookingdates'], field: expected}}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, expected_payload, schema_example=expected_payload)
+        check_create_booking_json_response(response, expected_payload, schema_example=expected_payload)
 
     @pytest.mark.parametrize(
         ('checkin', 'checkout'),
@@ -141,7 +141,7 @@ class TestInvalidBookingDates:
         # The allowed interval relation is unspecified; record current acceptance without changes.
         booking_payload['bookingdates'] = {'checkin': checkin, 'checkout': checkout}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, booking_payload, schema_example=booking_payload)
+        check_create_booking_json_response(response, booking_payload, schema_example=booking_payload)
 
 
 class TestInvalidBookingPayload:
@@ -190,4 +190,4 @@ class TestInvalidBookingPayload:
         booking_payload['unknown'] = 'extra'
         expected = {key: value for key, value in booking_payload.items() if key != 'unknown'}
         response = api.create_booking(booking_payload)
-        check_create_booking_response(response, expected, schema_example=expected)
+        check_create_booking_json_response(response, expected, schema_example=expected)

@@ -112,25 +112,6 @@ def booking_ids(response: Response) -> set[int]:
     return set(ids)
 
 
-def check_booking_ids(response: Response, expected_ids: set[int]) -> None:
-    """Check that the response contains exactly the expected booking IDs.
-
-    Args:
-        response: Booking list response to validate.
-        expected_ids: Complete set of IDs expected in the response.
-
-    Raises:
-        AssertionError: Media type or schema is invalid.
-        ResponseValuesMismatch: The ID sets differ.
-        ValueError: The response body is not valid JSON.
-    """
-    actual_ids = booking_ids(response)
-    try:
-        assert actual_ids == expected_ids
-    except AssertionError as error:
-        raise ResponseValuesMismatch(str(error)) from error
-
-
 def check_booking(
     api: ApiClient,
     booking_id: int,
@@ -152,10 +133,10 @@ def check_booking(
         requests.RequestException: Retrieval fails.
     """
     response = api.get_booking(booking_id)
-    check_json_booking(response, expected_payload, schema_example=schema_example)
+    check_booking_json_response(response, expected_payload, schema_example=schema_example)
 
 
-def check_json_booking(
+def check_booking_json_response(
     response: Response, expected_payload: dict[str, Any], *, schema_example: dict[str, Any] | None = None
 ) -> None:
     """Validate the JSON booking schema and compare all expected values.
@@ -287,7 +268,7 @@ def _booking_text_fields(payload: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def check_xml_booking(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_booking_xml_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Validate the XML root, required elements and expected field values.
 
     Args:
@@ -325,7 +306,7 @@ def check_xml_booking_data(root: ElementTree.Element, expected_payload: dict[str
     assert actual == expected
 
 
-def check_form_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_booking_form_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Check the URL-encoded update representation shown in the documentation.
 
     Args:

@@ -12,7 +12,7 @@ from checkers.errors import ResponseValuesMismatch
 from tests.client import ApiClient
 
 
-def check_partial_update_response(response: Response, expected_payload: dict[str, Any]) -> None:
+def check_partial_update_booking_json_response(response: Response, expected_payload: dict[str, Any]) -> None:
     """Check all fields, including values that should remain unchanged after PATCH.
 
     Args:

@@ -7,9 +7,9 @@ from typing import Any
 import pytest
 
 from checkers.common import check_booking
-from checkers.common import check_booking_ids
-from checkers.common import check_json_booking
+from checkers.common import check_booking_json_response
 from checkers.common import check_plain_text_error
+from checkers.get_bookings import check_get_bookings_response
 from checkers.partial_update_booking import check_serialization_error
 from checkers.partial_update_booking import check_unreadable_booking
 from helpers.models import Booking
@@ -78,7 +78,7 @@ class TestPartialUpdateBookingInvalidTypes:
         payload = {field: value}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     @pytest.mark.parametrize('value', [None, 'bad', True, [], {}], ids=['null', 'string', 'boolean', 'array', 'object'])
@@ -90,7 +90,7 @@ class TestPartialUpdateBookingInvalidTypes:
         payload = {'totalprice': value}
         expected = merge_booking_patch(booking.payload, {'totalprice': None})
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     def test_numeric_string_price(self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str]) -> None:
@@ -99,7 +99,7 @@ class TestPartialUpdateBookingInvalidTypes:
         payload = {'totalprice': '124'}
         expected = merge_booking_patch(booking.payload, {'totalprice': 124})
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     @pytest.mark.parametrize(('value', 'expected_value'), [(None, False), (0, False), (1, True), ('false', True),
@@ -113,7 +113,7 @@ class TestPartialUpdateBookingInvalidTypes:
         payload = {'depositpaid': value}
         expected = merge_booking_patch(booking.payload, {'depositpaid': expected_value})
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     @pytest.mark.parametrize('value', [{}, [], 'invalid'], ids=['empty-object', 'array', 'string'])
@@ -127,7 +127,7 @@ class TestPartialUpdateBookingInvalidTypes:
             booking.payload, {'bookingdates': {'checkin': '0NaN-aN-aN', 'checkout': '0NaN-aN-aN'}}
         )
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     def test_null_dates_object(self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str]) -> None:
@@ -180,7 +180,7 @@ class TestPartialUpdateBookingInvalidDates:
         payload = {'bookingdates': dates}
         expected = merge_booking_patch(booking.payload, {'bookingdates': {**dates, field: normalized}})
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
     @pytest.mark.parametrize(('checkin', 'checkout'), [('2031-07-01', '2031-07-01'), ('2031-07-01', '2031-06-30')],
@@ -193,7 +193,7 @@ class TestPartialUpdateBookingInvalidDates:
         payload = {'bookingdates': {'checkin': checkin, 'checkout': checkout}}
         expected = merge_booking_patch(booking.payload, payload)
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
 
@@ -207,7 +207,7 @@ class TestPartialUpdateBookingInvalidPayload:
         """Record a successful no-op when no recognized fields are supplied."""
         # Expected handling is unspecified; record current HTTP 200 with the original data preserved.
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, booking.payload, schema_example=booking.payload)
+        check_booking_json_response(response, booking.payload, schema_example=booking.payload)
         check_booking(api, booking.booking_id, booking.payload)
 
     def test_unknown_field_with_valid_change(
@@ -218,7 +218,7 @@ class TestPartialUpdateBookingInvalidPayload:
         payload = {'firstname': booking.payload['firstname'] + 'Changed', 'unknown': 'extra'}
         expected = merge_booking_patch(booking.payload, {'firstname': payload['firstname']})
         response = api.partial_update_booking(booking.booking_id, payload, auth=basic_auth)
-        check_json_booking(response, expected, schema_example=expected)
+        check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected)
 
     @pytest.mark.parametrize('body', ['', '[]'], ids=['empty-body', 'root-array'])
@@ -226,7 +226,7 @@ class TestPartialUpdateBookingInvalidPayload:
         """Record an unchanged booking after an empty body or root JSON array."""
         # Expected invalid-input handling is unspecified; record current HTTP 200 with unchanged data.
         response = api.partial_update_booking(booking.booking_id, body=body, auth=basic_auth)
-        check_json_booking(response, booking.payload, schema_example=booking.payload)
+        check_booking_json_response(response, booking.payload, schema_example=booking.payload)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize(('body', 'content_type'),
@@ -252,7 +252,7 @@ class TestPartialUpdateBookingInvalidPayload:
         # Expected header handling is unspecified; record current HTTP 200 with the original data preserved.
         body = json.dumps({'firstname': booking.payload['firstname'] + 'Changed'})
         response = api.partial_update_booking(booking.booking_id, body=body, content_type=content_type, auth=basic_auth)
-        check_json_booking(response, booking.payload, schema_example=booking.payload)
+        check_booking_json_response(response, booking.payload, schema_example=booking.payload)
         check_booking(api, booking.booking_id, booking.payload)
 
     @pytest.mark.parametrize('accept', ['application/pdf', None], ids=['unsupported', 'absent'])
@@ -283,4 +283,4 @@ class TestPartialUpdateBookingMissingId:
         )
         check_plain_text_error(response)
         response = api.get_bookings(params={'lastname': payload['lastname']})
-        check_booking_ids(response, set())
+        check_get_bookings_response(response, exact_ids=set())
