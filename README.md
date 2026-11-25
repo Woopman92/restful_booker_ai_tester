@@ -222,10 +222,12 @@ first run fails, fix the cause and rerun the failed job from **Actions**.
 ## 8. CI Tests
 
 The `.github/workflows/tests.yml` workflow runs on every branch push except
-`main`, including the first push and subsequent updates. Its `API tests` job
-checks out the pushed commit on an Ubuntu runner and executes `make test`, which
-builds the Docker image and runs the complete pytest suite. The job has read-only
-repository permissions and a 30-minute timeout.
+`main`, including the first push and subsequent updates. The `Lint` job runs
+`make lint` to check import order with isort, formatting with yapf, and lint
+rules with flake8. Once lint finishes, the `API tests` job runs the complete
+pytest suite with `make test`, even if lint failed. Cancelling the workflow
+also cancels pending tests. Each job checks out the pushed commit on its own
+Ubuntu runner with read-only repository permissions and a 30-minute timeout.
 
 Tests run independently of automatic PR creation. Using `push` avoids depending
 on approval of workflows triggered by PRs created with `GITHUB_TOKEN`.
@@ -234,8 +236,8 @@ Test failures, setup or cleanup errors, and an unsuccessful session Ping check
 fail the job; documented expected failures (`xfail`) remain allowed.
 
 View results and pytest output on the **Actions** tab or in the PR checks.
-The workflow alone does not block merging: after publishing it and running it
-once, make `API tests` a required status check in the ruleset for `main`.
+After the first branch run, require both `Lint` and `API tests` as status
+checks in the ruleset for `main` so that either failure blocks merging.
 
 The workflow also supports **Actions → API tests → Run workflow** for diagnostic
 runs. Select the branch to test. GitHub does not count checks from
