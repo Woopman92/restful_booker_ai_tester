@@ -102,9 +102,19 @@ class TestPartialUpdateBookingInvalidTypes:
         check_booking_json_response(response, expected, schema_example=expected)
         check_booking(api, booking.booking_id, expected, schema_example=expected)
 
-    @pytest.mark.parametrize(('value', 'expected_value'), [(None, False), (0, False), (1, True), ('false', True),
-                                                           ([], True), ({}, True)],
-                             ids=['null', 'zero', 'one', 'string', 'array', 'object'])
+    @pytest.mark.parametrize(
+        ('booking', 'value', 'expected_value'),
+        [
+            ({'depositpaid': True}, None, False),
+            ({'depositpaid': True}, 0, False),
+            ({'depositpaid': False}, 1, True),
+            ({'depositpaid': False}, 'false', True),
+            ({'depositpaid': False}, [], True),
+            ({'depositpaid': False}, {}, True),
+        ],
+        indirect=['booking'],
+        ids=['null', 'zero', 'one', 'string', 'array', 'object'],
+    )
     def test_deposit_coercion(
         self, api: ApiClient, booking: Booking, basic_auth: tuple[str, str], value: Any, expected_value: bool
     ) -> None:
