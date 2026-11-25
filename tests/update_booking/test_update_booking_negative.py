@@ -217,15 +217,20 @@ class TestUpdateBookingInvalidTypes:
     ) -> None:
         """Record conversion of a numeric string to an integer."""
         # Invalid-input handling is unspecified; record the observed conversion.
-        replacement_payload['totalprice'] = '123'
-        expected = {**replacement_payload, 'totalprice': 123}
-        response = api.update_booking(booking.booking_id, replacement_payload, auth=basic_auth)
-        check_update_booking_json_response(response, expected, schema_example=expected)
-        check_booking(api, booking.booking_id, expected, schema_example=expected)
+        payload = {**replacement_payload, 'totalprice': str(replacement_payload['totalprice'])}
+        response = api.update_booking(booking.booking_id, payload, auth=basic_auth)
+        check_update_booking_json_response(response, replacement_payload, schema_example=replacement_payload)
+        check_booking(api, booking.booking_id, replacement_payload, schema_example=replacement_payload)
 
     @pytest.mark.parametrize(
-        ('value', 'expected'),
-        [('false', True), (0, False), ([], True), ({}, True)],
+        ('booking', 'value', 'expected'),
+        [
+            ({'depositpaid': False}, 'false', True),
+            ({'depositpaid': True}, 0, False),
+            ({'depositpaid': False}, [], True),
+            ({'depositpaid': False}, {}, True),
+        ],
+        indirect=['booking'],
         ids=['string', 'number', 'array', 'object'],
     )
     def test_deposit_coercion(
