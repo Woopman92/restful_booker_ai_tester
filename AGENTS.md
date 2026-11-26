@@ -32,6 +32,7 @@
 1. Before making changes for a new task, switch to the local main branch and update it from the remote repository with git pull --ff-only origin main.
 2. Create a new task-specific branch from the updated main before editing files. Do not implement a new task directly on main or reuse a previous task's branch. Creating commits still requires the user's separate approval.
 3. Treat code and documentation work discussed in a side chat as part of the parent task. Use the same task branch for all edits, reviews, and checks in that side chat.
+4. Store temporary files created for project work in `.project-tmp/` at the repository root. Exclude this directory locally via `.git/info/exclude`.
 
 ## Test Implementation Requirements
 
