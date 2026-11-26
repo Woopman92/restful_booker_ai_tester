@@ -83,6 +83,9 @@ Python or Poetry to be installed on the host.
   request on its own line and store its result in `response`. Use separate tests
   when parameter cases require different expectations instead of adding `if`
   branches to the test body.
+- Supply service credentials explicitly in each test. The shared session ignores
+  netrc credentials on initial requests and redirects, while retaining Requests
+  environment settings for proxies and CA bundles.
 - Route endpoint methods through the shared `ApiClient._request` method. It disables
   automatic redirects by default. To follow redirects for a single call, pass
   `allow_redirects=True`, for example `api.get_booking(booking_id, allow_redirects=True)`.
