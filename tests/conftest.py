@@ -25,6 +25,7 @@ from constants import PING_PATH
 from constants import PING_RETRY_DELAY
 from helpers.models import Booking
 from tests.client import ApiClient
+from tests.session import ApiSession
 
 
 @pytest.fixture(scope='session')
@@ -35,7 +36,7 @@ def api() -> Iterator[ApiClient]:
         ApiClient: Shared client configured from the BOOKER_BASE_URL and
         BOOKER_TIMEOUT environment variables. The session closes at teardown.
     """
-    with requests.Session() as session:
+    with ApiSession() as session:
         session.headers.update({'Accept': 'application/json'})
         yield ApiClient(
             session,
