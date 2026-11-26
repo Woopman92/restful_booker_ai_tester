@@ -83,7 +83,10 @@ Python or Poetry to be installed on the host.
   request on its own line and store its result in `response`. Use separate tests
   when parameter cases require different expectations instead of adding `if`
   branches to the test body.
-- Each endpoint method checks the HTTP status before returning the response.
+- Route endpoint methods through the shared `ApiClient._request` method. It disables
+  automatic redirects by default. To follow redirects for a single call, pass
+  `allow_redirects=True`, for example `api.get_booking(booking_id, allow_redirects=True)`.
+  The client then checks the final response status.
   Ping and DeleteBooking expect 201 by default. The other endpoints expect 200.
   Pass another expected status by keyword, for example
   `api.get_booking(booking_id, expected_status_code=404)`.
