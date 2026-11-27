@@ -270,7 +270,7 @@ another automatic revert, preventing a rollback loop.
 
 The deterministic branch name prevents duplicate PRs on reruns, including when
 the previous PR was closed. If branch publication succeeded but PR creation
-failed, a rerun reuses the published branch. Later changes to `main` may require
+failed, a rerun creates the PR from the published branch without recomputing the revert. Later changes to `main` may require
 updating that PR before it can be merged.
 
 The proposal job uses `GITHUB_TOKEN` with `contents: write` and
