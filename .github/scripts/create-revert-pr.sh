@@ -29,35 +29,40 @@ if [[ -n "$existing_pr" ]]; then
   exit 0
 fi
 
-git fetch origin main
-git merge-base --is-ancestor "$BEFORE_SHA" "$FAILED_SHA"
-git merge-base --is-ancestor "$FAILED_SHA" origin/main
-git switch --create "$branch" origin/main
-git config user.name 'github-actions[bot]'
-git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-
-# First-parent traversal selects the whole update for merge, squash, and rebase.
-while read -r commit; do
-  parents=$(git rev-list --parents --max-count=1 "$commit")
-  read -ra revisions <<< "$parents"
-  if (( ${#revisions[@]} > 2 )); then
-    git revert --no-commit -m 1 "$commit"
-  else
-    git revert --no-commit "$commit"
-  fi
-done < <(git rev-list --first-parent "${BEFORE_SHA}..${FAILED_SHA}")
-
-if git diff --cached --quiet; then
-  echo "::notice::The failed update has no remaining changes to revert."
-  exit 0
-fi
-
-git commit -m "revert: propose rollback of PR #${original_pr}"
-
-# A previous attempt may have pushed the branch before PR creation failed.
-if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+# Resume after a successful push even if reverting against today's main would conflict.
+if git ls-remote --exit-code --heads origin "refs/heads/${branch}" > /dev/null; then
   echo "Reusing the existing revert branch: ${branch}"
 else
+  lookup_status=$?
+  if [[ "$lookup_status" -ne 2 ]]; then
+    echo "::error::Could not check the remote revert branch (git exit ${lookup_status})."
+    exit "$lookup_status"
+  fi
+
+  git fetch origin main
+  git merge-base --is-ancestor "$BEFORE_SHA" "$FAILED_SHA"
+  git merge-base --is-ancestor "$FAILED_SHA" origin/main
+  git switch --create "$branch" origin/main
+  git config user.name 'github-actions[bot]'
+  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+  # First-parent traversal selects the whole update for merge, squash, and rebase.
+  while read -r commit; do
+    parents=$(git rev-list --parents --max-count=1 "$commit")
+    read -ra revisions <<< "$parents"
+    if (( ${#revisions[@]} > 2 )); then
+      git revert --no-commit -m 1 "$commit"
+    else
+      git revert --no-commit "$commit"
+    fi
+  done < <(git rev-list --first-parent "${BEFORE_SHA}..${FAILED_SHA}")
+
+  if git diff --cached --quiet; then
+    echo "::notice::The failed update has no remaining changes to revert."
+    exit 0
+  fi
+
+  git commit -m "revert: propose rollback of PR #${original_pr}"
   git push origin "HEAD:refs/heads/${branch}"
 fi
 
