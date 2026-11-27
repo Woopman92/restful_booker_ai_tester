@@ -20,6 +20,10 @@ jobs:
       - name: Build image and run all tests
         run: make test
 
+      - name: Trigger revert recovery smoke test
+        if: github.event.before == '3018281bfac7f2f31df4004b8b8a510b7c2cb27a'
+        run: exit 1
+
   propose-revert:
     name: Propose revert for review
     needs: api-tests
@@ -46,4 +50,34 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           FAILED_SHA: ${{ github.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: bash .github/scripts/create-revert-pr.sh
+          SMOKE_TEST: ${{ github.event.before == '3018281bfac7f2f31df4004b8b8a510b7c2cb27a' }}
+        run: |
+          if [[ "$SMOKE_TEST" != true ]]; then
+            exec bash .github/scripts/create-revert-pr.sh
+          fi
+
+          branch="revert/failed-main-${FAILED_SHA}"
+          if [[ -n "$(gh pr list --base main --head "$branch" --state all --json number --jq '.[0].number // empty')" ]]; then
+            exec bash .github/scripts/create-revert-pr.sh
+          fi
+
+          # Only PR creation fails in this first attempt. Branch publication uses the real remote.
+          git worktree add --detach "$RUNNER_TEMP/first-attempt" "$FAILED_SHA"
+          status=0
+          (
+            cd "$RUNNER_TEMP/first-attempt"
+            gh() {
+              if [[ "$1" == pr && "$2" == create ]]; then return 75; fi
+              command gh "$@"
+            }
+            export -f gh
+            bash .github/scripts/create-revert-pr.sh
+          ) || status=$?
+          [[ "$status" == 75 ]]
+          published=$(git ls-remote --exit-code --heads origin "refs/heads/$branch" | cut -f1)
+
+          # Retry from the clean checkout with the real gh and verify the resulting PR.
+          bash .github/scripts/create-revert-pr.sh
+          actual=$(gh pr view "$branch" --json headRefOid --jq .headRefOid)
+          [[ "$actual" == "$published" ]]
+          echo "Verified that the revert PR uses the previously published commit $published."
